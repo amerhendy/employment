@@ -139,7 +139,7 @@ class PeopleController extends AmerController
             //if($person->id == 30){dd($person->Employment_PeopleNewStage);}
             //if($person->Employment_PeopleNewData !== Null){dd("SSSSSSSSSSS");}
             $people[$a]['id']=$person->id;
-            $people[$a]['Annonce_id']=['Number'=>$person->Employment_StartAnnonces->Number, "Year"=>$person->Employment_StartAnnonces->Year];
+            $people[$a]['annonce_id']=['Number'=>$person->Employment_StartAnnonces->Number, "Year"=>$person->Employment_StartAnnonces->Year];
             $people[$a]['NID']=$person->NID;
             $people[$a]['AgeYears']=$person->AgeYears;$people[$a]['AgeMonths']=$person->AgeMonths;$people[$a]['AgeDays']=$person->AgeDays;
             $people[$a]['BirthDate']=$person->BirthDate;
@@ -150,7 +150,7 @@ class PeopleController extends AmerController
                 $personalData=$person;
             }
             
-            $people[$a]['Job_id']=['Text'=>$personalData->Employment_Job->Mosama_JobNames->text,'Code'=>$personalData->Employment_Job->Code,'Driver'=>$personalData->Employment_Job->Driver];
+            $people[$a]['job_id']=['Text'=>$personalData->Employment_Job->Mosama_JobNames->text,'Code'=>$personalData->Employment_Job->Code,'Driver'=>$personalData->Employment_Job->Driver];
             $people[$a]['Fname']=$personalData->Fname;$people[$a]['Sname']=$personalData->Sname;$people[$a]['Tname']=$personalData->Tname;$people[$a]['Lname']=$personalData->Lname;
             $people[$a]['LiveGov']=$personalData->LiveGovernorates->Name;
             $people[$a]['LiveCity']=$personalData->LiveCities->Name;
@@ -240,11 +240,11 @@ class PeopleController extends AmerController
             $exists = $items->filter(function($item) use($needle) { 
                 return  
                 $item['id']==$needle || strpos($item['id'],$needle) || 
-                $item['Annonce_id']['Number'] ==$needle || strpos($item['Annonce_id']['Number'],$needle) || $item['Annonce_id']['Year'] == $needle || strpos($item['Annonce_id']['Year'],$needle) || 
+                $item['annonce_id']['Number'] ==$needle || strpos($item['annonce_id']['Number'],$needle) || $item['annonce_id']['Year'] == $needle || strpos($item['annonce_id']['Year'],$needle) || 
                 $item['NID'] == $needle || strpos($item['NID'],$needle) || 
                 $item['AgeYears'] == $needle || strpos($item['AgeYears'],$needle) || $item['AgeMonths'] == $needle || strpos($item['AgeMonths'],$needle) || $item['AgeDays'] == $needle || strpos($item['AgeDays'],$needle) || 
                 $item['Sex'] == $needle || strpos($item['Sex'],$needle) || $item['BirthDate'] == $needle || strpos($item['BirthDate'],$needle) || 
-                $item['Job_id']['Text'] == $needle || strpos($item['Job_id']['Text'],$needle) || $item['Job_id']['Code'] == $needle || strpos($item['Job_id']['Code'],$needle) || 
+                $item['job_id']['Text'] == $needle || strpos($item['job_id']['Text'],$needle) || $item['job_id']['Code'] == $needle || strpos($item['job_id']['Code'],$needle) || 
                 $item['Fname'] == $needle || strpos($item['Fname'],$needle) || $item['Sname'] == $needle || strpos($item['Sname'],$needle) || $item['Tname'] == $needle || strpos($item['Tname'],$needle) || $item['Lname'] == $needle || strpos($item['Lname'],$needle) || 
                 $item['LiveGov'] == $needle || strpos($item['LiveGov'],$needle) || $item['LiveCity'] == $needle || strpos($item['LiveCity'],$needle) || 
                 $item['LiveAddress'] == $needle || strpos($item['LiveAddress'],$needle) || $item['BornGov'] == $needle || strpos($item['BornGov'],$needle) || 

@@ -12,28 +12,31 @@
 }
 </style>
 <!-- fullname -->
-<div class="row text-right border-bottom"  id='fullname'>
-            <div class='col-lg-3 nsscwwbgcolor text-white text-center'>
+<div class="row text-right"  id='fullname'>
+            <div class='col-sm-3 bg-gradient text-white text-center'>
             {{trans('JOBLANG::Employment_People.FULLname')}}
             </div>
-            <div class='col-lg md-form input-group'>
+    <div class='col-lg md-form input-group rounded border'>
                 <?php
                 $fullnameinputs=[
-                    'Fname','Sname','Tname','Lname'
+                    'Fname'=>'fname','Sname'=>'sname','Tname'=>'tname','Lname'=>'lname'
                 ];
                 ?>
-                @foreach($fullnameinputs as $input)
-                <input 
-                        type="text" 
-                        aria-label="{{trans('JOBLANG::Employment_People.'.$input)}}" 
-                        class="form-control" placeholder="{{trans('JOBLANG::Employment_People.'.$input)}}" 
-                        name='{{$input}}' 
-                        onblur='trim(this)' 
-                        value="{{old($input) ?? $data->value->$input ?? ''}}" 
-                        minlen='1'>
+                @foreach($fullnameinputs as $tr=>$input)
+                <input
+                        type="text"
+                        aria-label="{{trans('JOBLANG::Employment_People.'.$tr)}}"
+                        class="form-control" placeholder="{{trans('JOBLANG::Employment_People.'.$tr)}}"
+                        name='{{$input}}'
+                        onblur='trim(this)'
+                        value="{{old($input) ?? $data->value->$input ?? ''}}"
+                        minlen='1'
+                        title="{{trans('JOBLANG::Employment_People.apply_info_fullname')}}"
+                        required
+                        >
                 @endforeach
-            </div>
-            <div class='col-lg-3 peach-gradient text-white text-center' id='fullname_info'>
-            {{trans('JOBLANG::Employment_People.apply_info_fullname')}}
-            </div>
+    </div>
+    <div class='col-lg-3 peach-gradient text-white text-center' id='fullname_info'>
+        {{trans('JOBLANG::Employment_People.apply_info_fullname')}}
+    </div>
         </div>

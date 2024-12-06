@@ -35,9 +35,9 @@ class Employment_ReportsAmerController extends AmerController
         $nid.=$birthdate->format("ymd");
         $GovsArr=[1=>'01',2=>'21',3=>'02',4=>'12',5=>'31',6=>'18',7=>'23',8=>'16',9=>'19',10=>'17',11=>'24',12=>'14',13=>'32',15=>'28',16=>'25',14=>'04',17=>'22',18=>'03',19=>'11',20=>'13',21=>'35',22=>'15',23=>'33',24=>'29',25=>'27',26=>'34',27=>'26'];
         $govid=array_rand($GovsArr);
-        $borncity=Cities::where('Gov_id',$govid)->inRandomOrder()->get()->first();
+        $borncity=Cities::where('gov_id',$govid)->inRandomOrder()->get()->first();
         $livegov=$govid=array_rand($GovsArr);
-        $livecity=Cities::where('Gov_id',$livegov)->inRandomOrder()->get()->first();
+        $livecity=Cities::where('gov_id',$livegov)->inRandomOrder()->get()->first();
         $nid.=$GovsArr[$govid];
         $fourNumbers=rand(1000,9999);
         if ($fourNumbers % 2 == 0) {
@@ -134,8 +134,8 @@ class Employment_ReportsAmerController extends AmerController
         
         $arr=[
             'id'=>'',
-            'Annonce_id'=>$annonce->id,
-            'Job_id'=>$jobid,
+            'annonce_id'=>$annonce->id,
+            'job_id'=>$jobid,
             'NID'=>$nidarr['nid'],
             'Sex'=>$nidarr['sex'],
             'Fname'=>$names[0],
@@ -178,7 +178,7 @@ class Employment_ReportsAmerController extends AmerController
         $ans=[];$sq=[];
         $jobs=\Amerhendy\Employment\App\Models\Employment_Jobs::where('Driver',1)->get('id');
         foreach($jobs as $job){
-            $people=Employment_People::where('Job_id',$job->id)->get();
+            $people=Employment_People::where('job_id',$job->id)->get();
             foreach($people as $a=>$b){
                 DB::table('Employment_People')->where('id',$b->id)->update(['DriverDegree'=>null,'DriverStart'=>null,'DriverEnd'=>null]);
             }

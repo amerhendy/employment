@@ -10,8 +10,8 @@ use Symfony\Component\HttpFoundation\Request;
 class Employment_JobsAmerController extends AmerController
 {
     use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\ListOperation;
-    use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\CreateOperation  {store as traitStore;}
-    //use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\CreateOperation;
+    //use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\CreateOperation  {store as traitStore;}
+    use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\CreateOperation;
     use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\UpdateOperation;
     use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\DeleteOperation;
     use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\ShowOperation;
@@ -52,7 +52,7 @@ class Employment_JobsAmerController extends AmerController
             [
                 'label' => trans('JOBLANG::Employment_StartAnnonces.Employment_StartAnnonces'),
                 'type'=>'select',
-                'name' => 'Annonce_id',
+                'name' => 'annonce_id',
                 'entity' => 'Employment_StartAnnonces',
                 'attribute' => ['Number','Year'],
                 //'attribute' => 'Number',
@@ -80,7 +80,7 @@ class Employment_JobsAmerController extends AmerController
             [
                 'label' => trans('EMPLANG::Mosama_JobNames.Mosama_JobNames'),
                 'type'=>'select',
-                'name' => 'Job_id',
+                'name' => 'job_id',
                 'model' => \Amerhendy\Employers\App\Models\Mosama_JobNames::class,
                 'entity'=>'Mosama_JobNames',
                 'attribute'=>'text',
@@ -103,7 +103,7 @@ class Employment_JobsAmerController extends AmerController
             'label' => trans('JOBLANG::Employment_StartAnnonces.Employment_StartAnnonces'),
             //'type' => 'Employment::fields.admin.E_J_annonce_Cities',
             'type'=>'select2',
-            'name' => 'Annonce_id', // the db column for the foreign key
+            'name' => 'annonce_id', // the db column for the foreign key
             'entity' => 'Employment_StartAnnonces', // the method that defines the relationship in your Model
             'attribute' => ['Number','Year'], // foreign key attribute that is shown to user
             //'model' => \Amerhendy\Employment\App\Models\Employment_StartAnnonces::class,
@@ -142,7 +142,7 @@ class Employment_JobsAmerController extends AmerController
             'tab'=>$tab1,
             'label' => trans('EMPLANG::Mosama_JobNames.Mosama_JobNames'),
             'type'=>'select2_from_ajax',
-            'name' => 'Job_id',
+            'name' => 'job_id',
             'data_source'=>$routes['fetchMosama_JobNames']['as'],
             //'model' => \Amerhendy\Employers\App\Models\Mosama_JobNames::class,
             'entity'=>'Mosama_JobNames',
@@ -165,7 +165,7 @@ class Employment_JobsAmerController extends AmerController
             'type'=>'textarea',
             'label'=>trans('JOBLANG::Employment_Jobs.Description'),
         ]);
-        
+
         Amer::addField([
             'tab'=>$tab2,
             'name'=>'OrgStru_Sections',
@@ -279,7 +279,7 @@ class Employment_JobsAmerController extends AmerController
             'attribute'=>'Text',
             'select_all'=>true
         ]);
-        
+
         Amer::addField([
             'tab'=>$tab5,
             'label' => trans('JOBLANG::Employment_Jobs.CityBornLive'),
@@ -292,7 +292,7 @@ class Employment_JobsAmerController extends AmerController
             'placeholder'=> trans('AMER::Cities.Cities'),
             'include_all_form_fields' => true,
             'minimum_input_length'    => 0,
-            'dependencies'            => ['Annonce_id'],
+            'dependencies'            => ['annonce_id'],
             'selectall'=>true
         ]);
         Amer::addField([
@@ -374,12 +374,12 @@ class Employment_JobsAmerController extends AmerController
     public function fetchGovernorates(){
         $get=$_GET;
         $form=$get['form'];
-        $Annonce_id=\Arr::where($form,function($v,$K){
-            return $v['name']=='Annonce_id';
+        $annonce_id=\Arr::where($form,function($v,$K){
+            return $v['name']=='annonce_id';
         });
-        $Annonce_id=$Annonce_id[array_keys($Annonce_id)[0]]['value'];
-        $gov=\Amerhendy\Amer\App\Models\Governorates::whereHas('Employment_StartAnnonces',function($query)use($Annonce_id){
-            return $query->where('Annonce_id',$Annonce_id);
+        $annonce_id=$annonce_id[array_keys($annonce_id)[0]]['value'];
+        $gov=\Amerhendy\Amer\App\Models\Governorates::whereHas('Employment_StartAnnonces',function($query)use($annonce_id){
+            return $query->where('annonce_id',$annonce_id);
         })->get()->toArray();
         $govids=[];
         if(count($gov)){
@@ -395,7 +395,7 @@ class Employment_JobsAmerController extends AmerController
                 return $model->whereHas('Governorates',function($q)use($govids){
                     return $q->whereIn('Governorates.id',$govids);
                 });
-            } 
+            }
         ]);
     }
     public function fetchMosama_JobTitles()
@@ -416,7 +416,7 @@ class Employment_JobsAmerController extends AmerController
                 return $model->whereHas('Mosama_Groups',function($q)use($Mosama_Groups){
                     return $q->where('Mosama_Groups.id',$Mosama_Groups);
                 });
-            } 
+            }
         ]);
     }
     public function fetchMosama_JobNames()
@@ -435,7 +435,7 @@ class Employment_JobsAmerController extends AmerController
                 return $model->whereHas('Mosama_JobTitles',function($q)use($Mosama_JobTitles){
                     return $q->where('Mosama_JobTitles.id',$Mosama_JobTitles);
                 });
-            } 
+            }
         ]);
     }
     public function fetchMosama_Educations()
@@ -458,7 +458,7 @@ class Employment_JobsAmerController extends AmerController
                 return $model->whereHas('Mosama_JobTitles',function($q)use($Mosama_JobTitles){
                     return $q->where('Mosama_JobTitles.id',$Mosama_JobTitles);
                 });
-            } 
+            }
         ]);
     }
     public function fetchEmployment_Drivers()
@@ -497,7 +497,7 @@ class Employment_JobsAmerController extends AmerController
                 return $model->whereHas('OrgStru_Sections',function($q)use($OrgStru_Sections){
                     return $q->whereIn('OrgStru_Sections.id',$OrgStru_Sections);
                 });
-            } 
+            }
         ]);
     }
     function fetchOrgStru_Mahatas(){
@@ -516,18 +516,7 @@ class Employment_JobsAmerController extends AmerController
                 return $model->whereHas('OrgStru_Areas',function($q)use($OrgStru_Areas){
                     return $q->whereIn('OrgStru_Areas.id',$OrgStru_Areas);
                 });
-            } 
+            }
         ]);
-    }
-    public function store(Request $request)
-    {
-        $table=$this->Amer->model->getTable();
-        $lsid=DB::table($table)->get()->max('id');
-        $id=$lsid+1;
-        $this->Amer->addField(['type' => 'hidden', 'name' => 'id', 'value'=>$id]);
-        $this->Amer->getRequest()->request->add(['id'=> $id]);
-        $this->Amer->setRequest($this->Amer->validateRequest());
-        $this->Amer->unsetValidation();
-        return $this->traitStore();
     }
 }

@@ -10,43 +10,35 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Model;
 use Amerhendy\Amer\App\Models\Traits\AmerTrait;
-use Cviebrock\EloquentSluggable\Sluggable;
-use Cviebrock\EloquentSluggable\SluggableScopeHelpers;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
 class Employment_Health extends Model
 {
-    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,Sluggable, SluggableScopeHelpers;
-    protected $table = 'Employment_Health';
+    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,HasUuids;
+    protected $table = "employment_healths";
     protected $primaryKey = 'id';
     public $incrementing = true;
     public $timestamps = true;
 
-    protected $fillable = ['Father','Text'];
+    protected $fillable = ['father',"text"];
     protected $dates = ['deleted_at'];
     public static $list=[];
     public static $fileds=[];
-public function sluggable(): array
-    {
-        return [
-            'slug' => [
-                'source' => [],
-            ],
-        ];
-    }
     public function Father(){
         return $this->belongsTo(Employment_Health::class,'id');
     }
     public function Son(){
-        return $this->belongsTo(Employment_Health::class,'Father');
+        return $this->belongsTo(Employment_Health::class,'father');
     }
 
-    public function employment_Job_Health()
+    public function employment_jobs_healthes()
         {
-            return $this->belongsToMany(Employment_Job::class, 'Employment_Health','id','id');
+            return $this->belongsToMany(Employment_Job::class, "employment_healths",'id','id');
         }
         public function Employment_Job()
 
         {
-            return $this->belongsToMany(Employment_Job::class, 'employment_Job_Health','Health_id','Job_id')->withTrashed();
+            return $this->belongsToMany(Employment_Job::class, 'employment_jobs_healthes','health_id','job_id')->withTrashed();
 
         }
 }

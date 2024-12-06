@@ -50,12 +50,18 @@ class apply extends AmerController
     }
     public static function api_index()
     {
-        $annonces=Employment_StartAnnonces::with('Employment_Qualifications')->with('Governorates')->where('Status','Publish')->get()->toArray();
+        $annonces=Employment_StartAnnonces::with('Employment_Qualifications')->with('Governorate')->where('status','Publish')->get()->toArray();
         //dd($annonces);
         if(count($annonces) !== '0'){
             foreach($annonces as $k=>$v){
-                $annonces[$k]['stage_id']=Employment_stages::where('id',$v['Stage_id'])->get(['id','Text','Page','Front'])->toArray();
-                $annonces[$k]['jobs']=Employment_Jobs::with('Mosama_Educations')->with('Employment_IncludedFiles')->with('Employment_Instructions')->with('Employment_Qualifications')->with('Mosama_Groups')->where('Annonce_id',$v['id'])->where('Status','Publish')->get()->toArray();
+                $annonces[$k]['stage_id']=Employment_stages::where('id',$v['stage_id'])->get(['id','text','page','front'])->toArray();
+                $annonces[$k]['jobs']=Employment_Jobs::with(
+                                                            [
+                                                                'Mosama_Educations','Employment_IncludedFiles','Employment_Instructions','Employment_Qualifications',
+                                                                'Mosama_Groups'
+                                                            ]
+                                                            )
+                                                        ->where('annonce_id',$v['id'])->where('status','Publish')->get()->toArray();
             }
             //$data=json_encode(['result'=>'success','data'=>$annonces]);
             $data=['result'=>'success','data'=>$annonces];
@@ -67,22 +73,21 @@ class apply extends AmerController
     public function getannonce_job_info($annid,$jobid){
         return view('Employment::showjobs',['annid'=>$annid,'jobid'=>$jobid]);
     }
-    public function selectview ($ann_slug, $job_slug,$nid=null,$stage=null){
+    public function selectview ($ann_id, $job_id,$nid=null,$stage=null){
         if(!isset($_SERVER['HTTP_REFERER'])){
             self::$error->number=405;self::$error->message=trans("AMER::errors.HTTP_REFERER");self::$error->line=__LINE__;return view('errors.layout',['console'=>self::$error]);
         }
         $from = request()->getSchemeAndHttpHost();
         if(\Str::contains($_SERVER['HTTP_REFERER'],$from) == false){self::$error->number=405;self::$error->message=trans("AMER::errors.HTTP_REFERER");self::$error->line=__LINE__;return view('errors.layout',['console'=>self::$error]);}
-        $query=Employment_startannonces::with(['Employment_Jobs'=>function($query)use($job_slug){
-            return $query->where('Slug',$job_slug);
-        }])->where('Slug',$ann_slug)->where('Status','Publish')->get()->first();
-        
+        $query=Employment_startannonces::with(['Employment_Jobs'=>function($query)use($job_id){
+            return $query->where('id',$job_id);
+        }])->where('id',$ann_id)->where('status','Publish')->get()->first();
         if(empty($query)){self::$error->number=405;self::$error->message=trans("JOBLANG::Apply.errors.startannoncesnotfound");self::$error->line=__LINE__;return view('errors.layout',['console'=>self::$error]);}
+        self::$annonce=$query;
         if(!count($query->Employment_Jobs)){self::$error->number=405;self::$error->message=trans("JOBLANG::Apply.nid_not_Exists");self::$error->line=__LINE__;return view('errors.layout',['console'=>self::$error]);}
-
-        $annid=$query->id;
-        $ann_Stage=$query->Stage_id;
-        $jobid=$query->Employment_Jobs[0]->id;
+        self::$job=$query->Employment_Jobs[0];
+        $annid=self::$annonce->id;
+        $jobid=self::$job->id;
         $data = [];
         if(request()->has('lastStage')){
             $stage=Employment_Stages::find(request()->lastStage);
@@ -91,15 +96,15 @@ class apply extends AmerController
                 $stage=$stage->Employment_Stages;
             }
         }else{
-            $stage=$query->Employment_Stages;
+            $stage=self::$annonce->Employment_Stages;
         }
-        $data['stage_name']=$stage->Text;
-        $currentstage=$stage->Page;
+        $data['stage_name']=$stage->text;
+        $currentstage=$stage->page;
         $Stagetype=\Str::substrCount($currentstage,'D:') ? "D:":"S:";
         if ($Stagetype === 'D:') {
-            $page=$stage->functionName;
-            $Control=$page->Control;
-            $Function=$page->Function;
+            $page=$stage->functionname;
+            $Control=$page->control;
+            $Function=$page->function;
             if($Control == \Str::afterLast(__CLASS__,'\\')){
                 if(method_exists($this,$Function)){
                     $Controler=__NAMESPACE__."\\".$Control;
@@ -127,14 +132,14 @@ class apply extends AmerController
                         $pars[]=$param->getName();
                     }
                     if($jobid == null){
-                        return $reflectionMethod->invoke(new $Controler(), $ann_slug);
+                        return $reflectionMethod->invoke(new $Controler(), $ann_id);
                     }elseif($nid !== null) {
-                        return $reflectionMethod->invoke(new $Controler(), $ann_slug,$job_slug,$nid,$stage->id);
+                        return $reflectionMethod->invoke(new $Controler(), $ann_id,$job_id,$nid,$stage->id);
                     }else{
-                        return $reflectionMethod->invoke(new $Controler(), $ann_slug,$job_slug);
+                        return $reflectionMethod->invoke(new $Controler(), $ann_id,$job_id);
                     }
-            
-            
+
+
         }else{
             $page=Employment_StaticPages::find((int) \Str::after($currentstage,':'));
             if(!$page){return view('errors.layout',['error_number'=>405,'error_message'=>__LINE__]);}
@@ -143,19 +148,19 @@ class apply extends AmerController
             return view('Employment::static', ['page_title' => $data['stage_name'], 'page' => 'jobs', 'data' => $data,'Breadcrumbs'=>$Breadcrumbs,'annonce'=>$annid]);
         }
     }
-    public static function search($ann_slug,$job_slug){
+    public static function search($ann_id,$job_id){
         $data=[];
         $data['status']=Employment_Status::get(['id','Text']);
-        return view('Employment::search',['annonce'=>$ann_slug,'job'=>$job_slug,'data'=>$data]);
+        return view('Employment::search',['annonce'=>$ann_id,'job'=>$job_id,'data'=>$data]);
     }
-    public static function create($ann_slug,$job_slug)
+    public static function create($ann_id,$job_id)
     {
         if(!request()->page){return view('errors.layout',['error_number'=>405,'error_message'=>__LINE__]);}
         if(request()->page !== 'showjob'){return view('errors.layout',['error_number'=>405,'error_message'=>__LINE__]);}
-        $ann=Employment_StartAnnonces::where('Slug',$ann_slug)->get();
+        $ann=Employment_StartAnnonces::where('id',$ann_id)->get();
         if(!count($ann)){return view('errors.layout',['error_number'=>404,'error_message'=>__LINE__]);}
-        
-        $job=Employment_Jobs::where('Slug',$job_slug)->where('Annonce_id',$ann[0]->id)->get();
+
+        $job=Employment_Jobs::where('id',$job_id)->where('annonce_id',$ann[0]->id)->get();
         if(!count($job)){return view('errors.layout',['error_number'=>404,'error_message'=>__LINE__]);}
         $data=[];
         $data['places']=Governorates::with('Cities')->get();
@@ -166,7 +171,7 @@ class apply extends AmerController
         $data['Employment_MaritalStatus']=Employment_MaritalStatus::all();
         $data['Mosama_Educations']=Mosama_Educations::all();
         if(request()->nid){$data['searchnid']=request()->nid;}
-        return view('Employment::apply',['page_title' => trans("JOBLANG::apply.apply"),'annonce'=>$ann_slug,'job'=>$job_slug,'data'=>$data,'request'=>'apply']);
+        return view('Employment::apply',['page_title' => trans("JOBLANG::apply.apply"),'annonce'=>$ann_id,'job'=>$job_id,'data'=>$data,'request'=>'apply']);
     }
     public static function review(Request $request,$reqtype=null){
         return reviewController::review($request,$reqtype);
@@ -208,7 +213,7 @@ class apply extends AmerController
     /*
     used in api/apply trait
      */
-    
+
     public static function complete(){
         return CompleteController::viewForm(request());
     }

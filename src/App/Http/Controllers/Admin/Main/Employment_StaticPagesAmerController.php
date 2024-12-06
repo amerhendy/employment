@@ -22,25 +22,30 @@ class Employment_StaticPagesAmerController extends AmerController
     use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\InlineCreateOperation;
     public function setup()
     {
-        AMER::setModel(Employment_StaticPages::class);
-        AMER::setRoute(config('Amer.employment.route_prefix') . '/Employment_StaticPages');
-        AMER::setEntityNameStrings(trans('JOBLANG::Employment_StaticPages.singular'), trans('JOBLANG::Employment_StaticPages.plural'));
-        /*
-        $this->Amer->setTitle(trans('JOBLANG::Employment_StaticPages.create'), 'create');
-        $this->Amer->setHeading(trans('JOBLANG::Employment_StaticPages.create'), 'create');
-        $this->Amer->setSubheading(trans('JOBLANG::Employment_StaticPages.create'), 'create');
-        $this->Amer->setTitle(trans('JOBLANG::Employment_StaticPages.edit'), 'edit');
-        $this->Amer->setHeading(trans('JOBLANG::Employment_StaticPages.edit'), 'edit');
-        $this->Amer->setSubheading(trans('JOBLANG::Employment_StaticPages.edit'), 'edit');
+        $modelName='Employment_StaticPages';
+        $this->tr=trans('JOBLANG::'.$modelName);
+        $model=Employment_StaticPages::class;
+        AMER::setModel($model);
+        $routePrefix=config('Amer.Employment.route_prefix');
+        AMER::setRoute($routePrefix . '/'.$modelName);
+        AMER::setEntityNameStrings($this->tr['singular'], $this->tr['plural']);
+        $this->Amer->setTitle($this->tr['create'], 'create');
+        $this->Amer->setHeading($this->tr['create'], 'create');
+        $this->Amer->setSubheading($this->tr['create'], 'create');
+        $this->Amer->setTitle($this->tr['edit'], 'edit');
+        $this->Amer->setHeading($this->tr['edit'], 'edit');
+        $this->Amer->setSubheading($this->tr['edit'], 'edit');
         $this->Amer->addClause('where', 'deleted_at', '=', null);
+        $this->setPermisssions($modelName);
+    }
+
+    public function setPermisssions($n){
         $this->Amer->enableDetailsRow ();
         $this->Amer->allowAccess ('details_row');
-        if(amer_user()->can('Employment_StaticPages-add') == 0){$this->Amer->denyAccess('create');}
-        if(amer_user()->can('Employment_StaticPages-trash') == 0){$this->Amer->denyAccess ('trash');}
-        if(amer_user()->can('Employment_StaticPages-update') == 0){$this->Amer->denyAccess('update');}
-        if(amer_user()->can('Employment_StaticPages-delete') == 0){$this->Amer->denyAccess('delete');}
-        if(amer_user()->can('Employment_StaticPages-show') == 0){$this->Amer->denyAccess('show');}
-        */
+        $accesslist=['update','list', 'show','trash','reorder','delete','create','clone','BulkDelete'];
+        foreach ($accesslist as $l) {
+            if(amer_user()->canper($n.'-'.$l) === false){$this->Amer->denyAccess($l);}
+        }
     }
     protected function setupShowOperation()
     {
@@ -49,12 +54,12 @@ class Employment_StaticPagesAmerController extends AmerController
     protected function setupListOperation(){
         AMER::addColumns([
             [
-                'name'=>'Name',
+                'name'=>'name',
                 'type'=>'text',
                 'label'=>trans('JOBLANG::Employment_StaticPages.Name'),
             ],
             [
-                'name'=>'Content',
+                'name'=>'content',
                 'type'=>'text',
                 'label'=>trans('JOBLANG::Employment_StaticPages.Content'),
             ],

@@ -12,33 +12,75 @@ use Illuminate\Support\Facades\URL;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Routing\Router;
-use Illuminate\Support\Collection;  
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
 class EmploymentServiceProvider extends ServiceProvider{
     use \Amerhendy\Amer\App\Helpers\Library\Database\PublishesMigrations;
+
+    protected $commands = [];
     protected $defer = false;
-    public $pachaPath="Amerhendy\Employment\\";
+    public static $pachaPath="Amerhendy\Employment\\";
+    public static $config;
     public function register(): void
     {
         require_once __DIR__.'/macro.php';
     }
     public function boot(Router $router): void
     {
-        $path=base_path('vendor/AmerHendy/Employment/src/');
         $this->loadConfigs();
-        $this->registerMigrations($path.'database/migrations');
+        self::$config=Config('Amer.Employment');
+        if(Config('Amer.Employment.package_path')){
+            self::$pachaPath=cleanDir(Config('Amer.Employment.package_path'));
+        }else{
+            self::$pachaPath=cleanDir(__DIR__);
+        }
+        $this->loadViewsFrom(cleanDir([self::$pachaPath,'view']), 'Employment');
+        $this->loadTranslationsFrom(cleanDir([self::$pachaPath,"lang"]), 'JOBLANG');
+        $this->registerMigrations(cleanDir([self::$pachaPath,"database",'migrations']));
         $this->loadroutes($this->app->router);
-        $this->loadTranslationsFrom(__DIR__.'/Lang','JOBLANG');
-        $this->loadViewsFrom($path.'/view', 'Employment');
-        //$this->addmainmenu();
-        $this->publishFiles();
-        $this->disk();
+        $this->setDisks();
         $this->temperoryurl();
+        //$this->addmainmenu();
     }
-    public function disk(){
-        app()->config['filesystems.disks.'.config('Amer.employment.root_disk_name')] = [
+    public function loadConfigs(){
+        foreach(getallfiles(__DIR__.'/config') as $file){
+            if(!Str::contains($file, 'config'.DIRECTORY_SEPARATOR."Amer".DIRECTORY_SEPARATOR)){
+                $name=Str::afterLast(Str::remove('.php',$file),'config'.DIRECTORY_SEPARATOR);
+            }else{
+                $name='Amer.'.ucfirst(Str::afterLast(Str::remove('.php',$file),'config'.DIRECTORY_SEPARATOR."Amer".DIRECTORY_SEPARATOR));
+            }
+
+            $this->mergeConfigFrom(
+                $file,$name
+            );
+        }
+    }
+    public function loadroutes(Router $router)
+    {
+        $routepath=getallfiles(cleanDir([self::$pachaPath,'route']));
+        foreach($routepath as $path){
+            if(!\Str::contains($path, 'api.php')){
+                $this->loadRoutesFrom($path);
+            }else{
+                Route::group($this->apirouteConfiguration(), function () use($path){
+                    $this->loadRoutesFrom($path);
+                });
+            }
+        }
+    }
+    protected function apirouteConfiguration()
+    {
+        return [
+            'prefix' =>'api/'.config('Amer.Amer.api_version')??'v1',
+            'middleware' => 'client',
+            'name'=>(config('Amer.Employment.routeName_prefix') ?? 'amer').'Api',
+            'namespace'  =>config('Amer.Employment.Controllers','\\Amerhendy\Employment\App\Http\Controllers'),
+        ];
+    }
+    public function setDisks(){
+        app()->config['filesystems.disks.'.config('Amer.Employment.root_disk_name')] = [
             'driver'=>'local',
             'root' => storage_path('app/Employment'),
             'url' => env('APP_URL').'/storage/Amer/Employment/',
@@ -46,7 +88,7 @@ class EmploymentServiceProvider extends ServiceProvider{
         ];
     }
     public function temperoryurl(){
-        Storage::disk(config('Amer.employment.root_disk_name'))->buildTemporaryUrlsUsing(
+        Storage::disk(config('Amer.Employment.root_disk_name'))->buildTemporaryUrlsUsing(
             function (string $path, DateTime $expiration, array $options) {
                 return URL::temporarySignedRoute(
                     'local.temp',
@@ -55,32 +97,6 @@ class EmploymentServiceProvider extends ServiceProvider{
                 );
             }
         );
-    }
-    public function loadConfigs(){
-        foreach(getallfiles(__DIR__.'/config/Amer') as $file){
-            $this->mergeConfigFrom($file,Str::replace('/','.',Str::afterLast(Str::remove('.php',$file),'config/')));
-        }
-    }
-    public function loadroutes(Router $router)
-    {
-        $packagepath=base_path('vendor/AmerHendy/Employment/src/');
-        $routepath=$this->getallfiles($packagepath.'/Route/');
-        foreach($routepath as $path){
-            //$this->loadRoutesFrom($path);
-        }
-        $this->loadRoutesFrom($packagepath.'/Route/route.php');
-        Route::group($this->apirouteConfiguration(), function () use($packagepath){
-            $this->loadRoutesFrom($packagepath.'/Route/api.php');
-        });
-    }
-    protected function apirouteConfiguration()
-    {
-        return [
-            'prefix' => 'api/v1',
-            'middleware' => 'client',
-            'name'=>config('Amer.employment.routeName_prefix','EmploymentApi'),
-            'namespace'  =>config('Amer.employment.Controllers','\\Amerhendy\Employment\App\Http\Controllers\\'),
-        ];
     }
     public function addmainmenu(){
         $sidelayout_path=resource_path('views/vendor/Amer/Base/inc/menu/mainmenu.blade.php');
@@ -105,18 +121,13 @@ class EmploymentServiceProvider extends ServiceProvider{
             }else{
                     return strpos($k, $needle) !== false;
             }
-            
+
         });
-        if ($matchingLines) { 
+        if ($matchingLines) {
             return array_key_last($matchingLines);
         }
 
         return false;
-    }   
-    function publishFiles()  {
-        $pb=config('Amer.employment.package_path') ?? __DIR__;
-        $config_files = [$pb.'/config/Amer' => config_path('Amer')];
-        $this->publishes($config_files, 'employment:config');
     }
     function getallfiles($path){
         $files = array_diff(scandir($path), array('.', '..'));

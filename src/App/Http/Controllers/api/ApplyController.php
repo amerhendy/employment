@@ -32,8 +32,8 @@ class ApplyController extends AmerController
         self::$error->number=402;
         self::$error->page=\Str::between(\Str::after(__FILE__,__DIR__),'\\','.php');
     }
-    
-    
+
+
     public static function applycheck ($annid,$jobid,$process,Request $request){
         //check request
         self::$request=$request;
@@ -41,7 +41,7 @@ class ApplyController extends AmerController
         if($req !== true){return ($req);}
         return self::store();
     }
-    
+
     public static function sstore(Request $request,$validator){
             if($request->actiontype == 'apply'){
                 $submit=self::apply_submit($request);
@@ -53,7 +53,7 @@ class ApplyController extends AmerController
                 }
             }
             if($request['actiontype'] == 'complete'){
-    
+
                 $submit=self::complete_submit($request);
                 if($submit[1] == 'bad'){
                     return redirect (redirect()->getUrlGenerator()->previous())->withErrors(['msg'=>1]);

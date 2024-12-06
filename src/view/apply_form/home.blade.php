@@ -23,7 +23,7 @@
 </template>
 <template id="AnnonceTitleTemplate">
     <div class="container px-4 py-5" id="">
-        <h5 class="pb-1 border-bottom" id="annonceTitle">{{trans("JOBLANG::Employment_StartAnnonces.fullAnnonceName")}}</h5>
+        <h5 class="pb-1 rounded border" id="annonceTitle">{{trans("JOBLANG::Employment_StartAnnonces.fullAnnonceName")}}</h5>
         <span class=''></span>
     </div>
    </template>
@@ -34,7 +34,7 @@
                     </svg>
                 <div>
                     <h5 class="fw-bold mb-0 fs-4 text-body-emphasis" data="" id="name">
-                        
+
                     </h5>
                     <p>{{trans('JOBLANG::Employment_Jobs.Code')}}:
                         <i id="jobCode"></i>

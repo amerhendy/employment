@@ -11,36 +11,27 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Model;
 use Amerhendy\Amer\App\Models\Traits\AmerTrait;
-use Cviebrock\EloquentSluggable\Sluggable;
-use Cviebrock\EloquentSluggable\SluggableScopeHelpers;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
 class Employment_Stages extends Model
 {
-    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,Sluggable, SluggableScopeHelpers;
-    protected $table = 'Employment_Stages';
+    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,HasUuids;
+    protected $table = 'employment_stages';
     protected $primaryKey = 'id';
-    protected $fillable=['Text','Days','Page','Front'];
+    protected $fillable=['text','days','page','front'];
     public $incrementing = true;
     public $timestamps = true;
     protected $dates = ['deleted_at'];
     public static $list=[];
-    
-    public function sluggable(): array
-    {
-        return [
-            'slug' => [
-                'source' => [],
-            ],
-        ];
-    }
     public static function addpages($ODS=null){
         $staticpages=Employment_StaticPages::all();
         $dinamicpages=Employment_DinamicPages::all();
         $final=[];
         foreach($staticpages as $k=>$v){
-            $final['S:'.$v->id]=trans('JOBLANG::Employment_StaticPages.Employment_StaticPages').':'.$v->Name;
+            $final['S:'.$v->id]=trans('JOBLANG::Employment_StaticPages.Employment_StaticPages').':'.$v->name;
         }
         foreach($dinamicpages as $k=>$v){
-            $final['D:'.$v->id]=trans('JOBLANG::Employment_DinamicPages.Employment_DinamicPages').':'.$v->Text;
+            $final['D:'.$v->id]=trans('JOBLANG::Employment_DinamicPages.Employment_DinamicPages').':'.$v->text;
         }
         if(is_null($ODS)){return $final;}else{
             return $ODS;
@@ -67,7 +58,7 @@ class Employment_Stages extends Model
                 return '';
             }
             foreach($pages as $k=>$v){
-                $name=$v->Name;
+                $name=$v->name;
             }
             return [Route($routename.'.Employment_StaticPages.show',$m),$name];
         }
@@ -77,7 +68,7 @@ class Employment_Stages extends Model
             $pages=Employment_DinamicPages::all()->where('id','=',$m);
             if(count($pages) == 0){return'';}
             foreach($pages as $k=>$v){
-                $name=$v->Name;
+                $name=$v->name;
             }
             return [Route($routename.'.Employment_DinamicPages.show',$m),$name];
         }
@@ -86,10 +77,10 @@ class Employment_Stages extends Model
         return Attribute::make(
             get:function (mixed $value, array $attributes){
                 $model='Amerhendy\Employment\App\Models\\';
-                $id= \Str::after($attributes['Page'],':');
-                if(\Str::startsWith($attributes['Page'],'D')){
+                $id= \Str::after($attributes['page'],':');
+                if(\Str::startsWith($attributes['page'],'D')){
                     $model.='Employment_DinamicPages';
-                }elseif (\Str::startsWith($attributes['Page'],'S')) {
+                }elseif (\Str::startsWith($attributes['page'],'S')) {
                     $model.='Employment_StaticPages';
                 }
                 return $model::find($id);
@@ -97,5 +88,5 @@ class Employment_Stages extends Model
             }
         );
     }
-    
+
 }

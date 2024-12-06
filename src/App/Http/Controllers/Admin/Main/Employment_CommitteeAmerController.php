@@ -51,7 +51,7 @@ class Employment_CommitteeAmerController extends AmerController
             [
                 'label' => trans('JOBLANG::Employment_StartAnnonces.Employment_StartAnnonces'),
                 'type'=>'select',
-                'name' => 'Annonce_id',
+                'name' => 'annonce_id',
                 'entity' => 'Employment_StartAnnonces',
                 'attribute' => ['Number','Year'],
                 //'attribute' => 'Number',
@@ -82,7 +82,7 @@ class Employment_CommitteeAmerController extends AmerController
             [
                 'label' => trans('JOBLANG::Employment_StartAnnonces.Employment_StartAnnonces'),
                 'type'=>'select2',
-                'name' => 'Annonce_id',
+                'name' => 'annonce_id',
                 'entity' => 'Employment_StartAnnonces',
                 'attribute' => ['Number','Year'],
                 //'attribute' => 'Number',

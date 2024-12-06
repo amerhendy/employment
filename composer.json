@@ -3,7 +3,7 @@
     "description": "nsscww Employment package",
     "type": "library",
 	"license": "proprietary",
-	"version": "0.0.0",
+	"version": "0.0.1",
     "autoload": {
         "psr-4": {
             "Amerhendy\\Employment\\": "src/"
@@ -16,21 +16,21 @@
         }
     ],
 	"minimum-stability": "dev",
-	"require": 
+	"require":
 	{
-		"php": "^8.1",
+		"php": "*",
 		"amerhendy/amer":"*"
 	},
 	"prefer-stable": true,
-	"config": 
+	"config":
 	{
 		"sort-packages": true,
 		"preferred-install": "dist",
 		"optimize-autoloader": true
 	},
-	"extra": 
+	"extra":
 	{
-		"laravel": 
+		"laravel":
 			{
 			"providers": ["Amerhendy\\Employment\\EmploymentServiceProvider"]
 		}

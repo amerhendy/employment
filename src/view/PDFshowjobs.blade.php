@@ -20,13 +20,13 @@ if($annonce->Description == null || $annonce->Description == ''){$Description=nu
 function setJob($data){
     $html[]=$data->Mosama_JobNames->Text.`(<i>`.$data->Mosama_JobTitles.`</i>)`;
     $html[]=trans('JOBLANG::apply.homepage_job_age_not_more.homepage_job_age_not_more').' <i>'.$data->AgeIn->Age.'</i> '.
-    trans('JOBLANG::apply.homepage_job_age_not_more.in').' <i>'.\AmerHelper::ArabicDate($data->AgeIn->Year,$data->AgeIn->Month,$data->AgeIn->Day).'</i> '.
+    trans('JOBLANG::apply.homepage_job_age_not_more.in').' <i>'.\AmerHelper::ArabicDate($data->AgeIn->agein->Year,$data->AgeIn->agein->Month,$data->AgeIn->agein->Day).'</i> '.
     '';
     $html[]=trans('JOBLANG::Employment_jobs.Code').': '.$data->code;
     if($data->Count !== 0){$html[]=trans('JOBLANG::Employment_jobs.Count').': '.$data->Count;}
     if(!is_null($data->Description)){$html[]=trans('JOBLANG::Employment_jobs.Description').': '.$data->Description;}
     $html[]=trans('EMPLANG::Mosama_Groups.Mosama_Groups').': '.$data->Mosama_Groups;
-    
+
     return implode('<Br>',$html);
 }
 function setExperiences($data){
@@ -36,7 +36,7 @@ function setExperiences($data){
             $ex[]=\Amerhendy\Employment\App\Http\Controllers\api\printTrait::khebraToStr($value);
         }
     }
-    
+
     return implode('<Br>',$ex);
 }
 function setList($data){
@@ -71,7 +71,7 @@ function setList($data){
     <tbody>
         <!-- setJob -->
         <tr>
-            <td class="loHightTd w30 border_left border_dashed">
+            <td class="loHightTd w30 scopeRow">
                 {{trans('EMPLANG::Mosama_JobTitles.singular')}}
             </td>
             <td class="loHightTd w160 fullright border_dashed">
@@ -81,7 +81,7 @@ function setList($data){
         <!-- setJob -->
         <!-- Mosama_Experiences -->
         <tr>
-            <td class="loHightTd w30 border_left border_dashed">
+            <td class="loHightTd w30 scopeRow">
                 {{trans('EMPLANG::Mosama_Experiences.singular')}}
                 <br>
                 <i class="info">{{trans('JOBLANG::apply.chooseone')}}</i>
@@ -91,7 +91,7 @@ function setList($data){
                 ?>
                 {!! setExperiences($data->Mosama_JobNames->Mosama_Experiences) !!}
             </td>
-            <td class="loHightTd w30 border_left border_dashed">
+            <td class="loHightTd w30 scopeRow">
                 {{trans('JOBLANG::Employment_jobs.CityBornLive')}}
                 <br>
                 <i class="info">{{trans('JOBLANG::apply.chooseone')}}</i>
@@ -103,7 +103,7 @@ function setList($data){
         <!-- Mosama_Experiences -->
         <!-- Employment_Ama -->
         <tr>
-            <td class="loHightTd w30 border_left border_dashed">
+            <td class="loHightTd w30 scopeRow">
                 {{trans('JOBLANG::Employment_Ama.Employment_Ama')}}
                 <br>
                 <i class="info">{{trans('JOBLANG::apply.chooseone')}}</i>
@@ -111,7 +111,7 @@ function setList($data){
             <td class="loHightTd w60 fullright border_dashed">
                 {!! implode(' - ',$data->Employment_Ama) !!}
             </td>
-            <td class="loHightTd w30 border_left border_dashed">
+            <td class="loHightTd w30 scopeRow">
                 {{trans('JOBLANG::Employment_Army.Employment_Army')}}
                 <br>
                 <i class="info">{{trans('JOBLANG::apply.chooseone')}}</i>
@@ -123,7 +123,7 @@ function setList($data){
         <!-- Employment_Ama -->
         <!-- Employment_Health -->
         <tr>
-            <td class="loHightTd w30 border_left border_dashed">
+            <td class="loHightTd w30 scopeRow">
                 {{trans('JOBLANG::Employment_Health.Employment_Health')}}
                 <br>
                 <i class="info">{{trans('JOBLANG::apply.chooseone')}}</i>
@@ -131,7 +131,7 @@ function setList($data){
             <td class="loHightTd w60 fullright border_dashed">
                 {!! implode(' - ',$data->Employment_Health) !!}
             </td>
-            <td class="loHightTd w30 border_left border_dashed">
+            <td class="loHightTd w30 scopeRow">
                 {{trans('JOBLANG::Employment_MaritalStatus.Employment_MaritalStatus')}}
                 <br>
                 <i class="info">{{trans('JOBLANG::apply.chooseone')}}</i>
@@ -143,7 +143,7 @@ function setList($data){
         <!-- Employment_Health -->
         <!-- Mosama_Educations -->
         <tr>
-            <td class="loHightTd w30 border_left border_dashed">
+            <td class="loHightTd w30 scopeRow">
                 {{trans('EMPLANG::Mosama_Educations.Mosama_Educations')}}
                 <br>
                 <i class="info">{{trans('JOBLANG::apply.chooseone')}}</i>
@@ -151,7 +151,7 @@ function setList($data){
             <td class="loHightTd w60 fullright border_dashed">
                 {!! setList($data->Mosama_Educations) !!}
             </td>
-            
+
             <td class="loHightTd w30 border_dashed @if($driver !== 0)  border_left @endif">
             @if($driver !== 0)
                 {{trans('JOBLANG::Employment_Drivers.Employment_Drivers')}}
@@ -164,13 +164,13 @@ function setList($data){
                 {!! setList($data->Employment_Drivers) !!}
                 @endif
             </td>
-            
+
         </tr>
         <!-- Mosama_Educations -->
 
         <!-- Mosama_Goals -->
         <tr>
-            <td class="loHightTd w30 border_left border_dashed">
+            <td class="loHightTd w30 scopeRow">
                 {{trans('EMPLANG::Mosama_Goals.Mosama_Goals')}}
             </td>
             <td class="loHightTd w160 fullright border_dashed">
@@ -180,7 +180,7 @@ function setList($data){
         <!-- Mosama_Goals -->
         <!-- Mosama_Competencies -->
         <tr>
-            <td class="loHightTd w30 border_left border_dashed">
+            <td class="loHightTd w30 scopeRow">
                 {{trans('EMPLANG::Mosama_Competencies.Mosama_Competencies')}}
             </td>
             <td class="loHightTd w160 fullright border_dashed">
@@ -190,7 +190,7 @@ function setList($data){
         <!-- Mosama_Competencies -->
         <!-- Mosama_Tasks -->
         <tr>
-            <td class="loHightTd w30 border_left border_dashed">
+            <td class="loHightTd w30 scopeRow">
                 {{trans('EMPLANG::Mosama_Tasks.Mosama_Tasks')}}
             </td>
             <td class="loHightTd w160 fullright border_dashed">
@@ -200,7 +200,7 @@ function setList($data){
         <!-- Mosama_Tasks -->
         <!-- Mosama_Skills -->
         <tr>
-            <td class="loHightTd w30 border_left border_dashed">
+            <td class="loHightTd w30 scopeRow">
                 {{trans('EMPLANG::Mosama_Skills.Mosama_Skills')}}
             </td>
             <td class="loHightTd w160 fullright border_dashed">
@@ -210,7 +210,7 @@ function setList($data){
         <!-- Mosama_Skills -->
         <!-- Employment_Qualifications -->
         <tr>
-            <td class="loHightTd w30 border_left border_dashed">
+            <td class="loHightTd w30 scopeRow">
                 {{trans('JOBLANG::Employment_Qualifications.Employment_Qualifications')}}
                 <br>
                 <i class="info">{{trans('JOBLANG::apply.chooseall')}}</i>
@@ -222,7 +222,7 @@ function setList($data){
         <!-- Employment_Qualifications -->
         <!-- Employment_IncludedFiles -->
         <tr>
-            <td class="loHightTd w30 border_left border_dashed">
+            <td class="loHightTd w30 scopeRow">
                 {{trans('JOBLANG::Employment_IncludedFiles.Employment_IncludedFiles')}}
                 <br>
                 <i class="info">{{trans('JOBLANG::apply.chooseall')}}</i>

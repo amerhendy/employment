@@ -32,7 +32,37 @@ trait printTrait{
      * return self::$people
      * @return void
      */
-    public static $forsearch=false; 
+    public static $forsearch=false;
+
+    public static function pdfdod($data){
+        $config=config('Amer.TCPDF');
+        $pdf = new \Amerhendy\Pdf\Helpers\AmerPdf($config['PageOrientation'],$config['PDFUnit'],$config['PageSize'], true, 'UTF-8', false);
+        $pdf->SetAuthor(config('Amer.amer.co_name'));
+        $pdf->SetTitle($data->headerTitle);
+        $pdf->SetSubject($data->headerTitle) ;
+        $pdf->SetKeywords(implode(',',explode(' ',$data->headerTitle." ".config('Amer.amer.co_name'))));
+        $pageheader=View::make("Employment::admin.pdfheader",['config'=>$config])->render();
+        $pageFooter=View::make("Employment::admin.pdfFooter",['config'=>$config])->render();
+        $pdf->setHeaderData($ln='', $lw=0, $ht='', $hs=$pageheader, $tc=array(0,0,0), $lc=array(0,0,0));
+        $pdf->setFooterHtml($font=['aealarabiya', 'B', 10],$hs=$pageFooter, $tc=array(0,0,0), $lc=array(0,0,0),$line=true);
+        $pdf->setFooterFont(Array($config['Font']['Date']['name'], '', $config['Font']['Date']['Size']));
+        $pdf->SetDefaultMonospacedFont($config['Font']['MONOSPACED']);
+        $pdf->SetMargins(10,20,10);
+        $pdf->SetHeaderMargin(0);
+        $pdf->SetFooterMargin(20);
+        $pdf->SetAutoPageBreak(TRUE, $config['PdfMargin']['MarginBottom']);
+        $pdf->setImageScale($config['ImageScaleRatio']);
+        if (@file_exists($config['packagePath'].'lang/ara.php')) {
+            require_once($config['packagePath'].'lang/ara.php');
+            $pdf->setLanguageArray($l);
+        }
+        $pdf->setFontSubsetting(true);
+        $pdf->SetFont('aealarabiya', '', 12, '', true);
+        $pdf->setRTL(true);
+        $pdf->AddPage();
+        $pdf->setViewerPreferences($config['ViewerPreferences']);
+        return $pdf;
+    }
     public static function query(){
         $query=Employment_People::with(
             'Employment_StartAnnonces','Employment_Job','Employment_PeopleNewData',
@@ -56,7 +86,7 @@ trait printTrait{
                 'Employment_PeopleNewData.Employment_Job','Employment_PeopleNewData.Employment_Job.Mosama_JobNames','Employment_PeopleNewData.Employment_Job.Mosama_JobNames.Mosama_Groups',
                 'Employment_PeopleNewData.Employment_Job.Mosama_JobNames.Mosama_JobTitles','Employment_PeopleNewData.Employment_Job.Mosama_JobNames.Mosama_Degrees'
                 )
-                
+
         ->whereIn('id', self::$request->input('ids'))->orderBy('id');
         if(self::$request->has('section')){
             if(self::$request->input('section') == 'Seatings'){
@@ -72,7 +102,7 @@ trait printTrait{
         }
         self::$people=$query;
         return true;
-    }    
+    }
     /**
      * DBToText
      *return self::$prePeople
@@ -83,8 +113,8 @@ trait printTrait{
         $peopleDB=self::$people;
         foreach($peopleDB as $a=>$person){
             $peopleDB[$a]->id=$person->id;
-            $peopleDB[$a]['Annonce_id']=self::convertAnnonceToStdClass($person->Employment_StartAnnonces);
-            $peopleDB[$a]['Job_id']=self::convertJobToStdClass($person->Employment_Job);
+            $peopleDB[$a]['annonce_id']=self::convertAnnonceToStdClass($person->Employment_StartAnnonces);
+            $peopleDB[$a]['job_id']=self::convertJobToStdClass($person->Employment_Job);
             $peopleDB[$a]['NID']=$person->NID;
             $peopleDB[$a]['BirthDate']=$person->BirthDate;
             if($person->Sex == '1'){$peopleDB[$a]['Sex']=trans('JOBLANG::Employment_People.Sex.Male');}else{$peopleDB[$a]['Sex']=trans('JOBLANG::Employment_People.Sex.Female');}
@@ -168,14 +198,14 @@ trait printTrait{
             return $annonceinfo;
     }
     public static function convertJobToStdClass($Job){
-        $Job_id=new \stdClass();
-            $Job_id->Code=$Job->Code;
-            $Job_id->Slug=$Job->Slug;
-            $Job_id->Mosama_JobNames=$Job->Mosama_JobNames->text;
-            $Job_id->Mosama_Groups=$Job->Mosama_JobNames->Mosama_Groups->text;
-            $Job_id->Mosama_JobTitles=$Job->Mosama_JobNames->Mosama_JobTitles->text;
-            $Job_id->Mosama_Degrees=$Job->Mosama_JobNames->Mosama_Degrees->text;
-            return $Job_id;
+        $job_id=new \stdClass();
+            $job_id->Code=$Job->Code;
+            $job_id->Slug=$Job->Slug;
+            $job_id->Mosama_JobNames=$Job->Mosama_JobNames->text;
+            $job_id->Mosama_Groups=$Job->Mosama_JobNames->Mosama_Groups->text;
+            $job_id->Mosama_JobTitles=$Job->Mosama_JobNames->Mosama_JobTitles->text;
+            $job_id->Mosama_Degrees=$Job->Mosama_JobNames->Mosama_Degrees->text;
+            return $job_id;
     }
     public static function khebraToStr($khebra,$type=null){
         if(gettype($khebra) == 'string'){
@@ -202,7 +232,7 @@ trait printTrait{
         }
             $keys=array_keys($khebra);
             $time=$khebra[$keys[0]];
-            
+
             if(isset($keys[1])){
                 $type=$khebra[$keys[1]];
             }else{
@@ -219,25 +249,25 @@ trait printTrait{
                 $khebra=\Str::replaceArray('?',[$type,$time],trans('JOBLANG::Employment_Reports.printForm.khebra'));
             }
         return $khebra;
-    
+
     }
     public static function setFace($person){
         $face=new \stdClass();
         $face->id=$person->id;
         $face->NID=$person->NID;
-        $face->Annonce_id=$person->Annonce_id;
+        $face->annonce_id=$person->annonce_id;
         //last stage
         $face->lastStage=$person->stageList->Last;
         //fullname
         if($person->Employment_PeopleNewData !== null){
             $face->FullName=$person->Employment_PeopleNewData->FullName;
-            $face->Job_id=$person->Employment_PeopleNewData->Job_id;
+            $face->job_id=$person->Employment_PeopleNewData->job_id;
             $face->ConnectLandline=$person->Employment_PeopleNewData->ConnectLandline;
             $face->ConnectMobile=$person->Employment_PeopleNewData->ConnectMobile;
             $face->ConnectEmail=$person->Employment_PeopleNewData->ConnectEmail;
             $face->Health_id=$person->Employment_PeopleNewData->Health_id;
         }else{
-            $face->Job_id=$person->Job_id;
+            $face->job_id=$person->job_id;
             $face->FullName=$person->FullName;
             $face->ConnectLandline=$person->ConnectLandline;
             $face->ConnectMobile=$person->ConnectMobile;
@@ -299,7 +329,7 @@ trait printTrait{
                 if($data->Face->id == 30){
                     //dd($data->StageList->LastEntry);
                 }
-                
+
                 $ret[$key]=$data;
         }
         self::$prePeople=$ret;
@@ -313,17 +343,6 @@ trait printTrait{
             }
             return $ret;
         }
-    }
-    public static function setViewerPreferences():array{
-        $ref=[
-            'HideToolbar'=>true,
-            'HideMenubar'=>true,
-            'HideWindowUi'=>true,
-            'FitWindow'>true,
-            'CenterWindow'=>true,
-            'DisplayDocTitle'=>false
-        ];
-        return $ref;
     }
     /**
      * checkSeatingsRequest
@@ -345,7 +364,7 @@ trait printTrait{
         foreach ($atts as $key => $value) {
             $atts[$key]=trans("JOBLANG::Employment_Reports.".$value);
         }
-        $roles=[ 
+        $roles=[
             'ids'=>'required',
             'section'=>'required|string|in:Seatings',
             'type'=>'required|in:Table,Ticket',
@@ -412,7 +431,7 @@ trait printTrait{
         }else{
             $current_page=$request->input('current_page');
         }
-        
+
         $data=[];
         $data['ids']=$ids;
         $data['stage']=$request->input('stage');
@@ -446,9 +465,9 @@ trait printTrait{
         }
     }
     public static function FileSection(){
-        $config=config('Amer.tcpdf');
+        $config=config('Amer.TCPDF');
         $pdf = new \Amerhendy\Pdf\Helpers\AmerPdf($config['PageOrientation'],$config['PDFUnit'],$config['PageSize'], true, 'UTF-8', false);
-        $pdf->setViewerPreferences(self::setViewerPreferences());
+        $pdf->setViewerPreferences($config['ViewerPreferences']);
         $pdf->SetCreator($config['PDFCreator']);
         $pdf->SetAuthor(config('Amer.amer.co_name'));
         $pdf->SetTitle(trans('JOBLANG::Employment_Reports.Employment_Reports'));
@@ -511,7 +530,7 @@ trait printTrait{
                 ];
                 $pdf->setHtmlVSpace($tagvs);
             }
-            
+
         $filename="A.pdf";
         return $pdf->Output($filename, 'E');
     }
@@ -552,7 +571,7 @@ trait printTrait{
         }
     }
     public static function createTicket(){
-        $config=config('Amer.tcpdf');
+        $config=config('Amer.TCPDF');
         $pdf = new \TCPDF($config['PageOrientation'],$config['PDFUnit'],$config['PageSize'], true, 'UTF-8', false);
         $pdf->SetCreator($config['PDFCreator']);
         $pdf->SetAuthor(config('Amer.amer.co_name'));
@@ -575,7 +594,7 @@ trait printTrait{
         $pdf->SetFont('aealarabiya', '', 12, '', true);
         $pdf->setRTL(true);
         $pdf->AddPage();
-        $pdf->setViewerPreferences(self::setViewerPreferences());
+        $pdf->setViewerPreferences($config['ViewerPreferences']);
         //$pdf->setTextShadow(array('enabled'=>true, 'depth_w'=>0.2, 'depth_h'=>0.2, 'color'=>array(196,196,196), 'opacity'=>1, 'blend_mode'=>'Normal'));
         $html='';
         $html="";
@@ -596,9 +615,9 @@ trait printTrait{
         return $pdf->Output($filename, 'E');
     }
     public static function createTicketTableForSign(){
-        $config=config('Amer.tcpdf');
+        $config=config('Amer.TCPDF');
         $pdf = new \Amerhendy\Pdf\Helpers\AmerPdf($config['PageOrientation'],$config['PDFUnit'],$config['PageSize'], true, 'UTF-8', false);
-        $pdf->setViewerPreferences(self::setViewerPreferences());
+        $pdf->setViewerPreferences($config['ViewerPreferences']);
         $pdf->SetCreator($config['PDFCreator']);
         $pdf->SetAuthor(config('Amer.amer.co_name'));
         $pdf->SetTitle(trans('JOBLANG::Employment_seatings.Employment_seatings'));
@@ -609,7 +628,7 @@ trait printTrait{
             require_once($config['packagePath'].'lang/ara.php');
             $pdf->setLanguageArray($l);
         }
-        $pageheader=View::make("Employment::admin.pdfheader",['config'=>$config])->render(); 
+        $pageheader=View::make("Employment::admin.pdfheader",['config'=>$config])->render();
         $pageFooter=View::make("Employment::admin.pdfFooter",['config'=>$config])->render();
         $pdf->setHeaderData($ln='', $lw=0, $ht='', $hs=$pageheader, $tc=array(0,0,0), $lc=array(0,0,0));
         $pdf->setFooterHtml($font=['aealarabiya', 'B', 10],$hs=$pageFooter, $tc=array(0,0,0), $lc=array(0,0,0),$line=true);
@@ -630,7 +649,7 @@ trait printTrait{
         }else{
             $tablewidth=190;
         }
-        $html.=View::make("Employment::admin.seatings.CssTable",['data'=>['tablewidth'=>$tablewidth]])->render(); 
+        $html.=View::make("Employment::admin.seatings.CssTable",['data'=>['tablewidth'=>$tablewidth]])->render();
         ///Committee_Number,Committee_Name
             $arr=self::$prePeople;
             if(self::$request->input('table') == 'tableForSign'){
@@ -644,10 +663,10 @@ trait printTrait{
                 $html.= View::make("Employment::admin.seatings.TableForSign",['data'=>$arr,'pdf'=>$pdf])->render();
                 $pdf->writeHTML($html, true, false, false, false, 'right');
             }else{
-                
-                
+
+
                 $pdf->startPageGroup();
-                $annonceInfo=$arr[0]->Face->Annonce_id;
+                $annonceInfo=$arr[0]->Face->annonce_id;
                 $Split=self::splitbycommitte($arr);
                 $Split=$Split->toArray();
                     $pdf->AddPage();
@@ -665,7 +684,7 @@ trait printTrait{
                 $pdf->writeHTML($html, true, false, false, false, 'right');
             }
         $filename="A.pdf";
-       
+
         return $pdf->Output($filename, 'E');
     }
     static function sortForTableMembers($data) {
@@ -682,12 +701,12 @@ trait printTrait{
             return $lazyCollection->all();
     }
     static function splitbycommitte($data){
-        $annonceInfo=$data[0]->Face->Annonce_id;
+        $annonceInfo=$data[0]->Face->annonce_id;
         ///groupbyjob
         $data=collect($data);
         //remove annonceinfo
         foreach($data as $k=>$v){
-            unset($data[$k]->Face->Annonce_id);
+            unset($data[$k]->Face->annonce_id);
             unset($data[$k]->Face->lastStage);
             unset($data[$k]->Face->ConnectLandline);unset($data[$k]->Face->ConnectMobile);unset($data[$k]->Face->ConnectEmail);
             unset($data[$k]->Grievance);unset($data[$k]->Seatings);unset($data[$k]->StageList);
@@ -711,9 +730,9 @@ trait printTrait{
     }
     static function GroupByJob($data) {
         $collection=$data->groupBy(function($item,$key){
-            return $item->Face->Job_id->Code;
+            return $item->Face->job_id->Code;
         });
-        
+
         $collection=$collection->map(function ($v,$k){
             return $v->groupBy(function($item,$key){
                 return $item->printSeatings->Committee_Date;
@@ -729,14 +748,14 @@ trait printTrait{
         return $collection;
     }
     public static function printSearchResult(){
-        $config=config('Amer.tcpdf');
+        $config=config('Amer.TCPDF');
         $pdf = new \Amerhendy\Pdf\Helpers\AmerPdf($config['PageOrientation'],$config['PDFUnit'],$config['PageSize'], true, 'UTF-8', false);
         $pdf->SetCreator($config['PDFCreator']);
         $pdf->SetAuthor(config('Amer.amer.co_name'));
         $pdf->SetTitle(trans('JOBLANG::Employment_seatings.Employment_seatings'));
         $pdf->SetSubject(trans('JOBLANG::Employment_seatings.Employment_seatings')) ;
         $pdf->SetKeywords(implode(',',explode(' ',trans('JOBLANG::Employment_seatings.Employment_seatings')." ".config('Amer.amer.co_name'))));
-        $pageheader=View::make("Employment::admin.pdfheader",['config'=>$config])->render(); 
+        $pageheader=View::make("Employment::admin.pdfheader",['config'=>$config])->render();
         $pageFooter=View::make("Employment::admin.pdfFooter",['config'=>$config])->render();
         $pdf->setHeaderData($ln='', $lw=0, $ht='', $hs=$pageheader, $tc=array(0,0,0), $lc=array(0,0,0));
         $pdf->setFooterHtml($font=['aealarabiya', 'B', 10],$hs=$pageFooter, $tc=array(0,0,0), $lc=array(0,0,0),$line=true);
@@ -755,7 +774,7 @@ trait printTrait{
         $pdf->SetFont('aealarabiya', '', 12, '', true);
         $pdf->setRTL(true);
         $pdf->AddPage();
-        $pdf->setViewerPreferences(self::setViewerPreferences());
+        $pdf->setViewerPreferences($config['ViewerPreferences']);
         //$pdf->setTextShadow(array('enabled'=>true, 'depth_w'=>0.2, 'depth_h'=>0.2, 'color'=>array(196,196,196), 'opacity'=>1, 'blend_mode'=>'Normal'));
         $html='';
         $html="";
@@ -765,7 +784,7 @@ trait printTrait{
         }else{
             $tablewidth=190;
         }
-        $html.=View::make("Employment::admin.seatings.CssTable",['data'=>['tablewidth'=>$tablewidth]])->render(); 
+        $html.=View::make("Employment::admin.seatings.CssTable",['data'=>['tablewidth'=>$tablewidth]])->render();
             $arr=self::$prePeople[0];
             $lastSatge=$arr->stageList->Last;
                 $html.= View::make("Employment::searchPDF",['data'=>$arr,'pdf'=>$pdf])->render();
@@ -783,104 +802,49 @@ trait printTrait{
         return $pdf->Output($filename, 'E');
     }
     public static function showJobPrint($job){
-        $config=config('Amer.tcpdf');
-        $pdf = new \Amerhendy\Pdf\Helpers\AmerPdf($config['PageOrientation'],$config['PDFUnit'],$config['PageSize'], true, 'UTF-8', false);
-        $pdf->SetCreator($config['PDFCreator']);
-        $pdf->SetAuthor(config('Amer.amer.co_name'));
-        $pdf->SetTitle(trans('JOBLANG::Employment_seatings.Employment_seatings'));
-        $pdf->SetSubject(trans('JOBLANG::Employment_seatings.Employment_seatings')) ;
-        $pdf->SetKeywords(implode(',',explode(' ',trans('JOBLANG::Employment_seatings.Employment_seatings')." ".config('Amer.amer.co_name'))));
-        $pageheader=View::make("Employment::admin.pdfheader",['config'=>$config])->render(); 
-        $pageFooter=View::make("Employment::admin.pdfFooter",['config'=>$config])->render();
-        $pdf->setHeaderData($ln='', $lw=0, $ht='', $hs=$pageheader, $tc=array(0,0,0), $lc=array(0,0,0));
-        $pdf->setFooterHtml($font=['aealarabiya', 'B', 10],$hs=$pageFooter, $tc=array(0,0,0), $lc=array(0,0,0),$line=true);
-        $pdf->setFooterFont(Array($config['Font']['Date']['name'], '', $config['Font']['Date']['Size']));
-        $pdf->SetDefaultMonospacedFont($config['Font']['MONOSPACED']);
-        $pdf->SetMargins(10,20,10);
-        $pdf->SetHeaderMargin(0);
-        $pdf->SetFooterMargin(20);
-        $pdf->SetAutoPageBreak(TRUE, $config['PdfMargin']['MarginBottom']);
-        $pdf->setImageScale($config['ImageScaleRatio']);
-        if (@file_exists($config['packagePath'].'lang/ara.php')) {
-            require_once($config['packagePath'].'lang/ara.php');
-            $pdf->setLanguageArray($l);
-        }
-        $pdf->setFontSubsetting(true);
-        $pdf->SetFont('aealarabiya', '', 12, '', true);
-        $pdf->setRTL(true);
-        $pdf->AddPage();
-        $pdf->setViewerPreferences(self::setViewerPreferences());
-        //$pdf->setTextShadow(array('enabled'=>true, 'depth_w'=>0.2, 'depth_h'=>0.2, 'color'=>array(196,196,196), 'opacity'=>1, 'blend_mode'=>'Normal'));
+        $job->headerTitle=trans('JOBLANG::Employment_Jobs.Employment_Jobs');
+        $pdf=self::pdfdod($job);
         $html='';
         $html="";
         $tablewidth=190;
-        $html.=View::make("Employment::admin.seatings.CssTable",['data'=>['tablewidth'=>$tablewidth]])->render(); 
-        $html.=View::make("Employment::PDFshowjobs",['data'=>['tablewidth'=>$tablewidth,'job'=>$job]])->render(); 
+        $html.=View::make("Employment::admin.seatings.CssTable",['data'=>['tablewidth'=>$tablewidth]])->render();
+        $html.=View::make("Employment::PDFshowjobs",['data'=>['tablewidth'=>$tablewidth,'job'=>$job]])->render();
         $tagvs = [
             'div' => [
                 ['h' => 0.5, 'n' => 0.01],['h' => 0.5, 'n' => 0.01]
             ]
         ];
         $pdf->setHtmlVSpace($tagvs);
-    $pdf->writeHTML($html, true, false, false, false, 'right');
-    $filename="A.pdf";
-    //dd($job->Employment_StartAnnonces->Employment_Stages,$job);
-    return [$pdf->Output($filename, 'E'),"data"=>["Stage"=>$job->Employment_StartAnnonces->Employment_Stages]];
+        $pdf->writeHTML($html, true, false, false, false, 'right');
+
+        $filename="A.pdf";
+        //dd($job->Employment_StartAnnonces->Employment_Stages,$job);
+        return [$pdf->Output($filename, 'E'),"data"=>["Stage"=>$job->Employment_StartAnnonces->Employment_Stages]];
         dd($job);
     }
     public static function applyReviewPrint($data){
-        $config=config('Amer.tcpdf');
-        $pdf = new \Amerhendy\Pdf\Helpers\AmerPdf($config['PageOrientation'],$config['PDFUnit'],$config['PageSize'], true, 'UTF-8', false);
-        $pdf->SetCreator($config['PDFCreator']);
-        $pdf->SetAuthor(config('Amer.amer.co_name'));
-        $pdf->SetTitle(trans('JOBLANG::Employment_seatings.Employment_seatings'));
-        $pdf->SetSubject(trans('JOBLANG::Employment_seatings.Employment_seatings')) ;
-        $pdf->SetKeywords(implode(',',explode(' ',trans('JOBLANG::Employment_seatings.Employment_seatings')." ".config('Amer.amer.co_name'))));
-        $pageheader=View::make("Employment::admin.pdfheader",['config'=>$config])->render(); 
-        $pageFooter=View::make("Employment::admin.pdfFooter",['config'=>$config])->render();
-        $pdf->setHeaderData($ln='', $lw=0, $ht='', $hs=$pageheader, $tc=array(0,0,0), $lc=array(0,0,0));
-        $pdf->setFooterHtml($font=['aealarabiya', 'B', 10],$hs=$pageFooter, $tc=array(0,0,0), $lc=array(0,0,0),$line=true);
-        $pdf->setFooterFont(Array($config['Font']['Date']['name'], '', $config['Font']['Date']['Size']));
-        $pdf->SetDefaultMonospacedFont($config['Font']['MONOSPACED']);
-        $pdf->SetMargins(10,20,10);
-        $pdf->SetHeaderMargin(0);
-        $pdf->SetFooterMargin(20);
-        $pdf->SetAutoPageBreak(TRUE, $config['PdfMargin']['MarginBottom']);
-        $pdf->setImageScale($config['ImageScaleRatio']);
-        if (@file_exists($config['packagePath'].'lang/ara.php')) {
-            require_once($config['packagePath'].'lang/ara.php');
-            $pdf->setLanguageArray($l);
-        }
-        $pdf->setFontSubsetting(true);
-        $pdf->SetFont('aealarabiya', '', 12, '', true);
-        $pdf->setRTL(true);
-        $pdf->AddPage();
-        $pdf->setViewerPreferences(self::setViewerPreferences());
-        
-        //$pdf->setTextShadow(array('enabled'=>true, 'depth_w'=>0.2, 'depth_h'=>0.2, 'color'=>array(196,196,196), 'opacity'=>1, 'blend_mode'=>'Normal'));
+        $pdf=self::pdfdod($data);
         $html='';
         $html="";
         $tablewidth=190;
-        $html.=View::make("Employment::admin.seatings.CssTable",['data'=>['tablewidth'=>$tablewidth]])->render(); 
-        if(!isset($data['Employment_People'])){
+        $html.=View::make("Employment::admin.seatings.CssTable",['data'=>['tablewidth'=>$tablewidth]])->render();
+        if(!property_exists($data,"Employment_People")){
             $html.=View::make("Employment::PDFapplyReviewJob",['data'=>['tablewidth'=>$tablewidth,'job'=>$data]])->render();
         }else{
             $html.=View::make("Employment::PDFCompleteReview",['data'=>['tablewidth'=>$tablewidth,'job'=>$data]])->render();
         }
-        
         $tagvs = [
             'div' => [
                 ['h' => 0.5, 'n' => 0.01],['h' => 0.5, 'n' => 0.01]
             ]
         ];
         $pdf->setHtmlVSpace($tagvs);
-    $pdf->writeHTML($html, true, false, false, false, 'right');
-    $filename="A.pdf";
-    //dd($job->Employment_StartAnnonces->Employment_Stages,$job);
-    return $pdf->Output($filename, 'E');
+        $pdf->writeHTML($html, true, false, false, false, 'right');
+        $filename="A.pdf";
+        return $pdf->Output($filename, 'E');
     }
     public static function AdminUpToDateResult($result){
-        $config=config('Amer.tcpdf');
+        $config=config('Amer.TCPDF');
         $config['PageOrientation']='L';
         $pdf = new \Amerhendy\Pdf\Helpers\AmerPdf($config['PageOrientation'],$config['PDFUnit'],$config['PageSize'], true, 'UTF-8', false);
         $pdf->SetCreator($config['PDFCreator']);
@@ -888,7 +852,7 @@ trait printTrait{
         $pdf->SetTitle(trans('JOBLANG::Employment_seatings.Employment_seatings'));
         $pdf->SetSubject(trans('JOBLANG::Employment_seatings.Employment_seatings')) ;
         $pdf->SetKeywords(implode(',',explode(' ',trans('JOBLANG::Employment_seatings.Employment_seatings')." ".config('Amer.amer.co_name'))));
-        $pageheader=View::make("Employment::admin.pdfheader",['config'=>$config,'pdf'])->render(); 
+        $pageheader=View::make("Employment::admin.pdfheader",['config'=>$config,'pdf'])->render();
         $pageFooter=View::make("Employment::admin.pdfFooter",['config'=>$config])->render();
         $pdf->setHeaderData($ln='', $lw=0, $ht='', $hs=$pageheader, $tc=array(0,0,0), $lc=array(0,0,0));
         $pdf->setFooterHtml($font=['aealarabiya', 'B', 10],$hs=$pageFooter, $tc=array(0,0,0), $lc=array(0,0,0),$line=true);
@@ -907,13 +871,13 @@ trait printTrait{
         $pdf->SetFont('aealarabiya', '', 12, '', true);
         $pdf->setRTL(true);
         $pdf->AddPage();
-        $pdf->setViewerPreferences(self::setViewerPreferences());
+        $pdf->setViewerPreferences($config['ViewerPreferences']);
         $html='';
         $html="";
-        
+
         $tablewidth=255;
-        $html.=View::make("Employment::admin.seatings.CssTable",['data'=>['tablewidth'=>$tablewidth]])->render(); 
-        $html.=View::make("Employment::admin.printreports.adminUpToDate",['data'=>['tablewidth'=>$tablewidth,'data'=>$result]])->render(); 
+        $html.=View::make("Employment::admin.seatings.CssTable",['data'=>['tablewidth'=>$tablewidth]])->render();
+        $html.=View::make("Employment::admin.printreports.adminUpToDate",['data'=>['tablewidth'=>$tablewidth,'data'=>$result]])->render();
         $tagvs = [
             'div' => [
                 ['h' => 0.5, 'n' => 0.01],['h' => 0.5, 'n' => 0.01]

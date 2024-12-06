@@ -1,14 +1,10 @@
 <?php
-$sources=[
-    'images'=>'images',
-];
-
 return [
     'default_date_format'     => 'D MMM YYYY',
     'default_datetime_format' => 'D MMM YYYY, HH:mm',
     'html_direction' => 'rtl',
     'styles' => [],
-    'js'=>[],    
+    'js'=>[],
     'route_prefix' => 'Employment',
     'web_middleware' => 'web',
     'view_namespace' => 'Employment::',

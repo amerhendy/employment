@@ -1,5 +1,4 @@
 <?php
-
 namespace Amerhendy\Employment\App\Http\Controllers\api;
 use Amerhendy\Amer\App\Helpers\AmerHelper;
 use Illuminate\Support\Collection;
@@ -26,11 +25,11 @@ use \Amerhendy\Amer\App\Http\Controllers\Base\AmerController;
 class PeopleJobsController extends AmerController
 {
     public static function lastJobs($data){
-        if($data->Employment_PeopleNewData ==null)return $data->Job_id;
-        return $data->Employment_PeopleNewData->Job_id;
+        if($data->Employment_PeopleNewData ==null)return $data->job_id;
+        return $data->Employment_PeopleNewData->job_id;
     }
-    public static function allJobsIsd($Annonce_id){
-        $jobs=Employment_Jobs::where('Annonce_id',$Annonce_id)->get('id');
+    public static function allJobsIsd($annonce_id){
+        $jobs=Employment_Jobs::where('annonce_id',$annonce_id)->get('id');
         $ids=[];
         foreach ($jobs as $key => $value) {
             $ids[]=($value->id);

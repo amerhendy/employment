@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 class Employment_Committee extends Model
 {
     use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens;
-    protected $table ="Employment_Committee";
+    protected $table ="employment_committees";
     protected $guarded = ['id'];
     protected $primaryKey = 'id';
     public $incrementing = true;
@@ -22,7 +22,7 @@ class Employment_Committee extends Model
     protected $fillable = [];
     protected $dates = ['deleted_at'];
     protected $casts=[
-        'Committee_Memebers'=>'array'
+        'committeememebers'=>'array'
     ];
     public static $fileds=[];
 
@@ -31,7 +31,7 @@ class Employment_Committee extends Model
     | FUNCTIONS
     |--------------------------------------------------------------------------
     */
-    protected function Committee_Memebers(): Attribute
+    protected function committeememebers(): Attribute
 {
     return Attribute::make(
         get: fn (string $value) => json_decode($value, true),
@@ -49,8 +49,8 @@ class Employment_Committee extends Model
     | RELATIONS
     |--------------------------------------------------------------------------
     */
-    public function Employment_StartAnnonces()
+    public function employment_startannonces()
     {
-        return $this->belongsTo(Employment_StartAnnonces::class, 'Annonce_id','id');
+        return $this->belongsTo(employment_startannonces::class, 'annonce_id','id');
     }
 }

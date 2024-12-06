@@ -10,47 +10,38 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Model;
 use Amerhendy\Amer\App\Models\Traits\AmerTrait;
-use Cviebrock\EloquentSluggable\Sluggable;
-use Cviebrock\EloquentSluggable\SluggableScopeHelpers;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class Employment_Qualifications extends Model
 {
-    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,Sluggable, SluggableScopeHelpers;
-    protected $table = 'Employment_Qualifications';
+    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,HasUuids;
+    protected $table = 'employment_qualifications';
     protected $primaryKey = 'id';
     public $incrementing = true;
     public $timestamps = true;
     protected $dates = ['deleted_at'];
     public static $list=[];
     public static $fileds=[];
-public function sluggable(): array
-    {
-        return [
-            'slug' => [
-                'source' => [],
-            ],
-        ];
-    }
-        //Employment_Qualifications
-        public function employment_Job_Qualifications()
+        //employment_qualifications
+        public function employment_jobs_qualifications()
         {
-            return $this->belongsToMany(Employment_Job::class, 'Employment_Qualifications','id','id');
+            return $this->belongsToMany(Employment_Job::class, 'employment_qualifications','id','id');
         }
         public function Employment_Job()
 
         {
-            return $this->belongsToMany(Employment_Job::class, 'employment_Job_Qualifications','Qualifications_id','Job_id')->withTrashed();
+            return $this->belongsToMany(Employment_Job::class, 'employment_jobs_qualifications','qualification_id','job_id')->withTrashed();
 
         }
 
-    //Employment_Qualifications
-        public function employment_startannonces_Qualifications()
+    //employment_qualifications
+        public function employment_startannonces_qualifications()
         {
-            return $this->belongsToMany(Employment_StartAnnonces::class, 'Employment_Qualifications','id','id');
+            return $this->belongsToMany(employment_StartAnnonces::class, 'employment_qualifications','id','id');
         }
-        public function Employment_StartAnnonces()
+        public function employment_startannonces()
 
         {
-            return $this->belongsToMany(Employment_StartAnnonces::class, 'employment_startannonces_Qualifications','Qualification_id','Annonce_id')->withTrashed();
+            return $this->belongsToMany(employment_StartAnnonces::class, 'employment_startannonces_qualifications','qualification_id','annonce_id')->withTrashed();
 
         }
 }

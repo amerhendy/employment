@@ -54,11 +54,11 @@ class CompleteController extends AmerController
         if(!$annonce){self::$error->number=405;self::$error->message=trans("JOBLANG::Apply.errors.startannoncesnotfound");self::$error->line=__LINE__;return view('errors.layout',['console'=>self::$error]);}
         self::$annonce=$annonce;
         $annonce_id=$annonce->id;
-        $job=Employment_Jobs::where('Slug',$job)->where('Annonce_id',$annonce_id)->first();
+        $job=Employment_Jobs::where('Slug',$job)->where('annonce_id',$annonce_id)->first();
         if(!$job){self::$error->number=405;self::$error->message=trans("JOBLANG::Apply.errors.jobNotFound");self::$error->line=__LINE__;return view('errors.layout',['console'=>self::$error]);}
         self::$job=$job;
         $job_id=$job->id;
-        $per=Employment_People::where('NID',$nid)->where('Annonce_id',$annonce_id)->first();
+        $per=Employment_People::where('NID',$nid)->where('annonce_id',$annonce_id)->first();
         if(!$per){self::$error->number=405;self::$error->message=trans("JOBLANG::Apply.nid_not_Exists");self::$error->line=__LINE__;return view('errors.layout',['console'=>self::$error]);}
         $nest=Employment_PeopleNewStage::where('People_id',$per->id)->get()->last();
         //dd($nest,$per[0]['id']);

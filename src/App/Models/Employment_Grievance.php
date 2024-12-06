@@ -11,37 +11,29 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Model;
 use Amerhendy\Amer\App\Models\Traits\AmerTrait;
-use Cviebrock\EloquentSluggable\Sluggable;
-use Cviebrock\EloquentSluggable\SluggableScopeHelpers;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
 class Employment_Grievance extends Model
 {
-    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,Sluggable, SluggableScopeHelpers;
-    protected $table = 'Employment_Grievance';
+    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,HasUuids;
+    protected $table = "employment_grievance";
     protected $primaryKey = 'id';
     public $incrementing = true;
     public $timestamps = true;
     protected $dates = ['deleted_at'];
     public static $list=[];
     public static $fileds=[];
-	public function sluggable(): array
-    {
-        return [
-            'slug' => [
-                'source' => [],
-            ],
-        ];
-    }
     //Employment_Grievance
 
     public function Employment_People()
     {
-        return $this->belongsTo(Employment_People::class,'People_id','id');
+        return $this->belongsTo(Employment_People::class,'people_id','id');
     }
 
 
-public function Employment_Stages()
+public function employment_stages()
     {
-        return $this->hasMany(Employment_Stages::class,'id', 'Stage_id');
+        return $this->hasMany(employment_stages::class,'id', 'stage_id');
     }
 
 }

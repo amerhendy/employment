@@ -1,7 +1,5 @@
 @extends(Baseview('app'))
 @push('after_scripts')
-@loadScriptOnce('js/apiRequest.js')
-@loadScriptOnce('js/bootstrap/masonry.pkgd.min.js')
 @loadScriptOnce('js/employment/checknid.js')
 @loadScriptOnce('js/employment/showjob.js')
 @loadScriptOnce('js/arabic.js')
@@ -13,7 +11,6 @@
     jstrans['homepage_annonce_number']="{{trans('JOBLANG::Employment_StartAnnonces.homepage_annonce_number')}}";
     jstrans['homepage_annonce_foryear']="{{trans('JOBLANG::Employment_StartAnnonces.homepage_annonce_foryear')}}"
     //jstrans['TypeYourNid']="{{trans('JOBLANG::apply.TypeYourNid')}}"
-
     months={{ Illuminate\Support\Js::from(trans("AMER::trojan.months")) }};
     jstrans['Mosama_JobTitles']={{ Illuminate\Support\Js::from(trans('EMPLANG::Mosama_JobTitles')) }};
     jstrans['apply']={{ Illuminate\Support\Js::from(trans('JOBLANG::apply')) }};
@@ -27,7 +24,6 @@
     jstrans['Employment_Qualifications']={{ Illuminate\Support\Js::from(trans('JOBLANG::Employment_Qualifications')) }};
     jstrans['Employment_Army']={{ Illuminate\Support\Js::from(trans('JOBLANG::Employment_Army')) }};
     jstrans['Employment_IncludedFiles']={{ Illuminate\Support\Js::from(trans('JOBLANG::Employment_IncludedFiles')) }};
-
     jstrans['Mosama_Experiences']={{ Illuminate\Support\Js::from(trans('EMPLANG::Mosama_Experiences')) }};
     jstrans['Mosama_Competencies']={{ Illuminate\Support\Js::from(trans('EMPLANG::Mosama_Competencies')) }};
     jstrans['Mosama_Tasks']={{ Illuminate\Support\Js::from(trans('EMPLANG::Mosama_Tasks')) }};
@@ -35,9 +31,6 @@
     jstrans['Mosama_Skills']={{ Illuminate\Support\Js::from(trans('EMPLANG::Mosama_Skills')) }};
     jstrans['Mosama_Groups']={{ Illuminate\Support\Js::from(trans('EMPLANG::Mosama_Groups')) }};
     jstrans['Mosama_Educations']={{ Illuminate\Support\Js::from(trans('EMPLANG::Mosama_Educations')) }};
-    
-    
-    
 </script>
 @endpush
 <?php
@@ -92,15 +85,12 @@
         <p class="card-text">
             <SPAN CLASS="Mosama_JobTitles"></SPAN><br><SPAN CLASS="sjjjn">
               <br>
-              {{trans('JOBLANG::apply.homepage_job_age_not_more.homepage_job_age_not_more')}} (<SPAN CLASS="sjanm"></SPAN>) {{trans('JOBLANG::apply.homepage_job_age_not_more.year')}} 
+              {{trans('JOBLANG::apply.homepage_job_age_not_more.homepage_job_age_not_more')}} (<SPAN CLASS="sjanm"></SPAN>) {{trans('JOBLANG::apply.homepage_job_age_not_more.year')}}
             {{trans('JOBLANG::apply.homepage_job_age_not_more.in')}} <SPAN CLASS="sjanmat"></SPAN>
         </p>
       </div>
     </div>
 </div>
-</template>
-<template id="printBtnTemplate">
-<a class="btn btn-primary btn-lg" href="#" role="button" onclick="print();" type="button">{{trans('AMER::crud.export.print')}}</a>
 </template>
 <template id="nidaskTemplate">
   <span class="btn btn-primary btn-lg " id="app_pro" role="button"  data-bs-toggle="modal" data-bs-target="#exampleModal"></span>

@@ -1,8 +1,8 @@
 <?php
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-    Route::post('frontpage','\Amerhendy\Employment\App\Http\Controllers\api\AnnoncesController@frontpage');
-    Route::post('employment/getjob','api\AnnoncesController@getjob_by_job_slug');
+    Route::post('frontpage','api\AnnoncesController@frontpage')->name('frontpage');
+    Route::post('employment/getjob','api\AnnoncesController@getjob_by_id');
     Route::post('employment/getjob/{annslug}','api\AnnoncesController@getjob_by_Annonce_slug');
     Route::post('employment/checknid','api\nidController@employment_apply_checknid');       //checked
     Route::post('employment/allgovs','api\AnnoncesController@allgovs');        //checked
@@ -26,10 +26,6 @@ use Illuminate\Support\Facades\Auth;
     Route::post('employmentReports/message_template','api\PeopleController@message_template');
     route::post('employmentReports/PrintForm','api\AdminUptoDate@PrintForm')->name('EmploymentsPrintFormApi');
     //route::post('employmentReports/PrintForm/Seating','api\AdminUptoDate@SeatingForm')->name('SeatingFormApi');
-    
     Route::post('employmentReports/adminuptodate','api\AdminUptoDate@index');
     Route::post('employmentReports/adminuptodate/downloadZip','api\AdminUptoDate@downloadZip');
     Route::post('employmentReports/adminuptodate/PrintUserData','api\AdminUptoDate@printUserData');
-    
-
-    

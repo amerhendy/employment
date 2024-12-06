@@ -1,5 +1,4 @@
 <?php
-
 namespace Amerhendy\Employment\App\Http\Controllers\api;
 use Amerhendy\Amer\App\Helpers\AmerHelper;
 use Illuminate\Support\Collection;

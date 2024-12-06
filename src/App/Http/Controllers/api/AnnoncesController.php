@@ -31,91 +31,110 @@ class AnnoncesController extends AmerController
         self::$error->page=\Str::between(\Str::after(__FILE__,__DIR__),'\\','.php');
     }
     public function frontpage(){
-        $data=Employment_startannonces::has('Employment_Jobs')->with('Employment_Jobs.Mosama_JobNames','Employment_Jobs.Mosama_JobTitles')
-        ->with('Governorates')
+        $data=Employment_startannonces::has('Employment_Jobs')->with('Employment_Jobs.Mosama_JobNames','Employment_Jobs.Mosama_JobNames.Mosama_JobTitles')
+        ->with('Governorate')
         ->whereHas('Employment_Jobs',function($query){
-            return $query->where('Employment_Jobs.Status','Publish')->orderBy('Code');
-        })->where('Status','Publish')->orderBy('id')->get();
+            return $query->where('employment_jobs.status','Publish')->orderBy('code');
+        })->where('status','Publish')->orderBy('updated_at')->get();
         $result=[];
-        //dd($data[0]->Employment_Stages->Text);
         foreach($data as $a=>$b) {
-            $result[$a]['number']=$b->Number;
-            $result[$a]['year']=$b->Year;
-            $result[$a]['description']=$b->Description;
-            $result[$a]['Slug']=$b->Slug;
-            foreach($b['Governorates'] as $c=>$d){
-                $place=$data[$a]['Governorates'][$c];
-                $result[$a]['place'][$c]=$place->Name;
+            $class=new \stdClass;
+            $class->id=$b->id;
+            $class->number=$b->number;
+            $class->year=$b->year;
+            $class->description=$b->description;
+            $class->governorates=[];
+            foreach ($b->governorate as $key => $value) {
+                $class->governorates[$key]=$value->name;
             }
-            foreach($b['Employment_Jobs'] as $c=>$d){
-                $job=$d;
-                //dd($d['Mosama_JobTitles']->text);
-                $result[$a]['Employment_Jobs'][$c]['code']=$d->Code;
-                $result[$a]['Employment_Jobs'][$c]['name']=$d['Mosama_JobTitles']->text;
-                $result[$a]['Employment_Jobs'][$c]['job_description']=$d->Description;
-                $result[$a]['Employment_Jobs'][$c]['job_name']=$d['Mosama_JobNames']->text;
-                $result[$a]['Employment_Jobs'][$c]['Slug']=$d->Slug;
+            $class->Employment_Jobs=[];
+            foreach($b->Employment_Jobs as $c=>$d){
+                $job=new \stdClass;
+                $job->id=$d->id;
+                $job->job_name=$d->Mosama_JobNames->text;
+                $job->name=$d->Mosama_JobNames->Mosama_JobTitles->text;
+                $job->code=$d->code;
+                $job->description=$d->description;
+                $places=[];
+                foreach($d->city as $l=>$m){
+                    $places[$l]['name']=$m->name;
+                    $places[$l]['gov']=$m->governorate->name;
+                }
+                $places=collect($places);
+                $places = $places->groupBy('gov');
+                $job->place=$places->toArray();
+                $class->Employment_Jobs[]=$job;
+
             }
+            $result[]=$class;
         }
         //return $data;
         return $result;
     }
-    public static function getjob_by_job_slug(Request $request){
+    public static function getjob_by_id(Request $request){
         self::$request  =$request;
-        return self::getjobInfo();
-        dd($request);
+        $check=self::ShowJobReq();
+        if(!$check){
+            return $check;
+        }
+        $annonceid=self::$annonce->slug ?? self::$request->input('annonceid');
+        $data=jobs::with([
+            'Employment_StartAnnonces'
+            ])
+                ->where('id',$request->input('jobid'))
+                ->whereHas('Employment_StartAnnonces',function($query)use($annonceid){
+                    return $query->where('employment_startannonces.id',$annonceid);
+                })
+                ->get();
+            if(!$data){
+                self::$error->message=trans('JOBLANG::Employment_Reports.errors.publicError',['name'=>trans('JOBLANG::Employment_Reports.errors.informations')]);self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
+            }
+            if(self::$request->has('page')){
+                if(self::$request->input('page') == 'showJob'){$request->merge(['view'=>'pdf']);}
+            }
+
+        $data=self::getjobInfo($data,'one');
+        return ($data);
     }
-    public static function getjob_by_Annonce_slug($annslug){
-        $annonce=Employment_StartAnnonces::where('Slug',$annslug)->first();
+    public static function getjob_by_Annonce_slug($annid){
+        $annonce=Employment_StartAnnonces::where('id',$annid)->first();
         if(!$annonce){
             self::$error->message=trans('JOBLANG::Employment_Reports.errors.publicError',['name'=>trans('JOBLANG::Employment_StartAnnonces.plural')]);self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
         }
         $JobData=jobs::with('Employment_StartAnnonces')
-        ->with('Employment_StartAnnonces.Employment_Stages')
-        ->with('Employment_StartAnnonces.Governorates')
-        ->with('Employment_StartAnnonces.Employment_Qualifications')
-        ->with('Mosama_JobTitles')
-        ->with(['Mosama_JobNames','Mosama_JobNames.Mosama_Competencies','Mosama_JobNames.Mosama_Experiences','Mosama_JobNames.Mosama_Goals','Mosama_JobNames.Mosama_Skills','Mosama_JobNames.Mosama_Tasks','Mosama_JobNames.Mosama_Degrees'])
-        ->with('Mosama_Groups')
-        ->with('Employment_Ama')
-        ->with('Employment_Army')
-        ->with('Cities')
-        ->with('Mosama_Educations')
-        ->with('Employment_Health')
-        ->with('Employment_IncludedFiles')
-        ->with('Employment_Instructions')
-        ->with('Employment_MaritalStatus')
-        ->with('Employment_Qualifications')
-        ->with('Employment_Drivers')
-        ->where('Annonce_id',$annonce->id)
-        ->whereHas('Employment_StartAnnonces',function($query)use($annslug){
-        return $query->where('Employment_StartAnnonces.Slug',$annslug);
+        ->where('annonce_id',$annonce->id)
+        ->whereHas('employment_startannonces',function($query)use($annid){
+        return $query->where('employment_startannonces.id',$annid);
         })
         ->get();
         if(!$JobData){self::$error->message=trans('JOBLANG::Employment_Reports.errors.publicError',['name'=>trans('JOBLANG::Employment_Reports.errors.informations')]);self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);}
+        self::$request=request();
+        self::$request->merge(['view'=>'json']);
+        $data=self::getjobInfo($JobData,'list');
+        return $data;
         $eldata=[];
         foreach ($JobData as $key => $data) {
-            //$data=$data[0];
+            $result=new \stdClass();
+            $result->id=$data->id;
+            $result->code=$data->code;
+            $result->description=$data->description;
+            $result->count=$data->count;
+            $result->agein=$data->ageformat;
+            $result->driver=$data->driver;
+            $result->status=$data->status;
+            $result->Mosama_JobNames=new \stdClass();
+            $result->Mosama_JobNames->text=$data->Mosama_JobNames->text;
+            $result->Mosama_JobNames->Mosama_JobTitles=$data->Mosama_JobNames->Mosama_JobTitles->text;
+            $result->Mosama_JobNames->Mosama_Groups=$data->Mosama_JobNames->Mosama_Groups->text;
+            $result->Mosama_JobNames->Mosama_Degrees=$data->Mosama_JobNames->Mosama_Degrees->text;
+            $result->Mosama_JobNames->Mosama_Tasks=\Arr::map($data->Mosama_JobNames->Mosama_Tasks->toArray(),function($v,$k){return $v['text'];});
+            $result->Mosama_JobNames->Mosama_Skills=\Arr::map($data->Mosama_JobNames->Mosama_Skills->toArray(),function($v,$k){return $v['text'];});
+            $result->Mosama_JobNames->Mosama_Goals=\Arr::map($data->Mosama_JobNames->Mosama_Goals->toArray(),function($v,$k){return $v['text'];});
+            $result->Mosama_JobNames->Mosama_Experiences=\Arr::map($data->Mosama_JobNames->Mosama_Experiences->toArray(),function($v,$k){return [$v['type'],$v['time']];});
+            $result->Mosama_JobNames->Mosama_Competencies=\Arr::map($data->Mosama_JobNames->Mosama_Competencies->toArray(),function($v,$k){return $v['text'];});
+            dd($result->Mosama_JobNames->Mosama_Tasks);
             $result=[];
-            $result['code']=$data->Code;
-            $result['Description']=$data->Description;
-            $result['Slug']=$data->Slug;
-            $result['Count']=$data->Count;
-            $result['AgeIn']=[
-                'day'=>\Carbon\Carbon::parse($data->AgeIn)->format('d'),
-                'month'=>\Carbon\Carbon::parse($data->AgeIn)->format('m'),
-                'year'=>\Carbon\Carbon::parse($data->AgeIn)->format('Y'),
-            ];
-            $result['Age']=$data->Age;
-            $result['Driver']=$data->Driver;
-            $result['Mosama_JobNames']['Text']=$data->Mosama_JobNames->text;
-            $result['Mosama_JobNames']['Mosama_Degrees']=$data->Mosama_JobNames->Mosama_Degrees->text;
-            $result['Mosama_JobNames']['Mosama_Tasks']=\Arr::map($data->Mosama_JobNames->Mosama_Tasks->toArray(),function($v,$k){return $v['text'];});
-            $result['Mosama_JobNames']['Mosama_Skills']=\Arr::map($data->Mosama_JobNames->Mosama_Skills->toArray(),function($v,$k){return $v['text'];});
-            $result['Mosama_JobNames']['Mosama_Goals']=\Arr::map($data->Mosama_JobNames->Mosama_Goals->toArray(),function($v,$k){return $v['text'];});
-            $result['Mosama_JobNames']['Mosama_Experiences']=\Arr::map($data->Mosama_JobNames->Mosama_Experiences->toArray(),function($v,$k){return [$v['type'],$v['time']];});
-            $result['Mosama_JobNames']['Mosama_Competencies']=\Arr::map($data->Mosama_JobNames->Mosama_Competencies->toArray(),function($v,$k){return $v['text'];});
-            $result['Mosama_JobTitles']=$data->Mosama_JobTitles->text;
+
             $result['Employment_StartAnnonces']['Number']=$data->Employment_StartAnnonces->Number;
             $result['Employment_StartAnnonces']['Year']=$data->Employment_StartAnnonces->Year;
             $result['Employment_StartAnnonces']['Description']=$data->Employment_StartAnnonces->Description;
@@ -132,7 +151,7 @@ class AnnoncesController extends AmerController
             $result['Employment_IncludedFiles']=\Arr::map($data->Employment_IncludedFiles->toArray(),function($v,$k){return $v['FileName'];});
             $result['Mosama_Educations']=\Arr::map($data->Mosama_Educations->toArray(),function($v,$k){return $v['text'];});
             $result['Cities']=\Arr::map($data->Cities->toArray(),function($v,$k){return $v['Name'];});
-            $result['Mosama_Groups']=$data->Mosama_Groups->text;
+
             $eldata[$key]=$result;
 }
         return \AmerHelper::responsedata($eldata,1,1,'');
@@ -146,12 +165,12 @@ class AnnoncesController extends AmerController
         if(!$an){
             self::$error->result='errorannonce';self::$error->message=trans('JOBLANG::apply.nid_error_annonce');self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
         }
-        $job=Employment_Jobs::where('Slug',$jbslug)->where('Annonce_id',$an->id)->first();
+        $job=Employment_Jobs::where('Slug',$jbslug)->where('annonce_id',$an->id)->first();
         if(!$job){
             self::$error->result='errorjob';self::$error->message=trans('JOBLANG::apply.nid_error_annonce');self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
         }
         $job_id=$job->id;
-        $sckannonce=Employment_People::where('NID',$nid)->where('Annonce_id',$an->id)->first();
+        $sckannonce=Employment_People::where('NID',$nid)->where('annonce_id',$an->id)->first();
         ////////////////check Stage//////////////////
         $pageid=\Str::after($an->Employment_Stages->Page,":");
         if(\Str::before($an->Employment_Stages->Page,":") == 'D'){
@@ -172,13 +191,13 @@ class AnnoncesController extends AmerController
         self::$error->result='error';self::$error->message=trans('JOBLANG::apply.nid_error_annonce');self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
     }
     function allgovs(){
-        
-        
+
+
         $result=Governorates::orderBy('Name')->get(['id','Name']);
         return \AmerHelper::responsedata($result,1,$result->count(),'');
     }
     function bygovid($gov){
-        $result=Cities::orderBy('Gov_id')->where('Gov_id',$gov)->get(['id','Name','LandLineCode']);
+        $result=Cities::orderBy('gov_id')->where('gov_id',$gov)->get(['id','Name','LandLineCode']);
         return \AmerHelper::responsedata($result,1,$result->count(),'');
     }
     function healthCollection(){
@@ -193,7 +212,7 @@ class AnnoncesController extends AmerController
         $result=Employment_Army::orderBy('Text')->get(['id','Text']);
         return \AmerHelper::responsedata($result,1,$result->count(),'');
     }
-    
+
     function amaCollection(){
         $result=Employment_Ama::orderBy('Text')->get(['id','Text']);
         return \AmerHelper::responsedata($result,1,$result->count(),'');
@@ -228,7 +247,7 @@ class AnnoncesController extends AmerController
         $AnnonceVal=$request->input('AnnonceVal');
         $as= Employment_Jobs::with('Mosama_JobNames');
         if(is_numeric($AnnonceVal)){
-            $as=$as->where('Annonce_id',$AnnonceVal)->orWhereHas('Employment_StartAnnonces',function($query)use($AnnonceVal){
+            $as=$as->where('annonce_id',$AnnonceVal)->orWhereHas('Employment_StartAnnonces',function($query)use($AnnonceVal){
                 return $query->where('Employment_StartAnnonces.Slug',$AnnonceVal);
                 });
         }else{

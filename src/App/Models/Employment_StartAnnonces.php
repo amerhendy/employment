@@ -10,61 +10,52 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Model;
 use Amerhendy\Amer\App\Models\Traits\AmerTrait;
-use Cviebrock\EloquentSluggable\Sluggable;
-use Cviebrock\EloquentSluggable\SluggableScopeHelpers;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 class Employment_StartAnnonces extends Model
 {
-    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,Sluggable, SluggableScopeHelpers;
-    protected $table = 'Employment_StartAnnonces';
+    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,HasUuids;
+    protected $table = 'employment_startannonces';
     protected $primaryKey = 'id';
     public $incrementing = true;
     public $timestamps = true;
-    protected $fillable = ['Number', 'Year', 'Description', 'Employment_Qualifications','Stage_id', "Slug", 'Status','Employment_Stages','Governorates'];
+    protected $fillable = ['number', 'year', 'description', 'employment_qualifications','stage_id', "slug", 'status','employment_stages','governorates'];
     protected $dates = ['deleted_at'];
     public static $list=[];
     public static $fileds=[];
-public function sluggable(): array
-    {
-        return [
-            'Slug' => [
-                'source' => ['Governorates','Number', 'Year', 'Status','Employment_Stages'],
-            ],
-        ];
-    }
-    
+
     //Employment_StartAnnonces
-    public function Employment_StartAnnonces_Qualifications()
+    public function employment_startannonces_qualifications()
     {
-        return $this->belongsToMany(Employment_Qualifications::class, 'Employment_StartAnnonces','id','id');
+        return $this->belongsToMany(employment_qualifications::class, 'employment_startannonces','id','id');
     }
-    public function Employment_Qualifications()
+    public function employment_qualifications()
 
     {
-        return $this->belongsToMany(Employment_Qualifications::class, 'Employment_StartAnnonces_Qualifications','Annonce_id','Qualification_id')->withTrashed();
-
-    }
-
-//Employment_StartAnnonces
-    public function Employment_StartAnnonces_Governorates()
-    {
-        return $this->belongsToMany(\Amerhendy\Amer\App\Models\Governorates::class, 'Employment_StartAnnonces','id','id');
-    }
-    public function Governorates()
-
-    {
-        return $this->belongsToMany(\Amerhendy\Amer\App\Models\Governorates::class, 'Employment_StartAnnonces_Governorates','Annonce_id','Governorate_id')->withTrashed();
+        return $this->belongsToMany(employment_qualifications::class, 'employment_startannonces_qualifications','annonce_id','qualification_id')->withTrashed();
 
     }
-    public function Employment_Stages()
+
+//employment_startannonces
+    public function employment_startannonces_governorates()
     {
-        return $this->hasOne(Employment_Stages::class,'id', 'Stage_id');
+        return $this->belongsToMany(\Amerhendy\Amer\App\Models\governorates::class, 'employment_startannonces','id','id');
+    }
+    public function governorate()
+
+    {
+        return $this->belongsToMany(\Amerhendy\Amer\App\Models\governorates::class, 'employment_startannonces_governorates','annonce_id','gov_id')->withTrashed();
+
+    }
+    public function employment_stages()
+    {
+        return $this->hasOne(employment_stages::class,'id', 'stage_id');
     }
     public function Employment_Committee()
     {
-        return $this->hasOne(Employment_Committee::class,'id', 'Stage_id');
+        return $this->hasOne(Employment_Committee::class,'id', 'stage_id');
     }
     public function Employment_Jobs()
     {
-        return $this->hasMany(Employment_Jobs::class, 'Annonce_id','id');
+        return $this->hasMany(Employment_Jobs::class, 'annonce_id','id');
     }
 }

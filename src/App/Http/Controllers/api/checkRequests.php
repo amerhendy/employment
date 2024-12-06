@@ -5,16 +5,15 @@ use Amerhendy\Employment\App\Models\Employment_Stages;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule; 
+use Illuminate\Validation\Rule;
 use Amerhendy\Employment\App\Rules\uptoidsTextarea;
-
 use \Amerhendy\Employment\App\Models\Employment_StartAnnonces;
 use \Amerhendy\Employment\App\Models\Employment_Jobs;
 use \Amerhendy\Employment\App\Models\Employment_People;
 trait checkRequests
 {
 public static $erros;
-    public function __construct(){        
+    public function __construct(){
         self::$error=new \stdClass();
         self::$error->number=402;
         self::$error->page=\Str::between(\Str::after(__FILE__,__DIR__),'\\','.php');
@@ -26,13 +25,13 @@ public static $erros;
     }
     public static function SearchPagecheck(){
         $request=self::$request;
-        
+
     }
     public static function checknid(){
         $request=self::$request;
         $rules=[
-            'annonceSlug'=>['required','exists:Employment_StartAnnonces,Slug'],
-            'jobSlug'=>'required|exists:Employment_Jobs,Slug',
+            'annonceid'=>['required','exists:employment_startannonces,id'],
+            'jobid'=>'required|exists:employment_jobs,id',
             'page'=>[
                 'required',
                 Rule::in(['search','create','complete','showjob','apply']),
@@ -65,52 +64,65 @@ public static $erros;
             'mimetypes'=>trans('JOBLANG::apply.errors.mimetypes',[':attribute']),
         ];
         $validator = Validator::make(self::$request->all(), $rules,$errorMessages,$attributes);
-        
-        self::$nid=trim(self::$request->input('nid'));
-        self::$annonce= Employment_StartAnnonces::with('Employment_Stages')->where('Slug',self::$request->input('annonceSlug'))->first();
-        if(!self::$annonce){
-            $validator->errors()->add('jobSlug',trans('JOBLANG::apply.errors.required',[trans('JOBLANG::Employment_StartAnnonces.plural')]));
-            return response()->json(['error'=>$validator->errors()]);
+        if(count($validator->errors())){
+            self::$error->message=$validator->errors();self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
         }
-        self::$job=Employment_Jobs::where('Slug',self::$request->input('jobSlug'))->where('Annonce_id',self::$annonce->id)->first();
-        
+        self::$nid=trim(self::$request->input('nid'));
+        /////check annonce////////////
+        self::$annonce= Employment_StartAnnonces::with('employment_stages')->where('id',self::$request->input('annonceid'))->first();
+        if(!self::$annonce){
+            $validator->errors()->add('jobid',trans('JOBLANG::apply.errors.required',[trans('JOBLANG::Employment_StartAnnonces.plural')]));
+            self::$error->message=$validator->errors();self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
+        }
+        /////check job////////////
+        self::$job=Employment_Jobs::where('id',self::$request->input('jobid'))->where('annonce_id',self::$annonce->id)->first();
         if(!self::$job){
-            $validator->errors()->add('jobSlug',trans('JOBLANG::apply.Employment_Jobs.selectJob'));
+            $validator->errors()->add('jobid',trans('JOBLANG::apply.Employment_Jobs.selectJob'));
             return response()->json(['error'=>$validator->errors()]);
         }
         if(self::$request->input('page') !== 'create'){
             //get job action
             $action=self::$annonce->Employment_Stages->functionName->Function;
             if($action == 'complete'){
-                $people=Employment_People::where('NID',self::$nid)->where('Annonce_id',self::$annonce->id)->with('Employment_PeopleNewStage')->first();
+                $people=Employment_People::where('nid',self::$nid)->where('annonce_id',self::$annonce->id)->with('Employment_PeopleNewStage')->first();
+                if(!$people){
+                    $validator->errors()->add('nid',trans('JOBLANG::Employment_People.NID'));
+                    self::$error->message=$validator->errors();self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
+                }
                 $lststge=$people->Employment_PeopleNewStage->last()->Stage_id;
                 $fun=Employment_Stages::find($lststge)->functionName->Function;
                 if(!in_array($fun,[self::$request->input('page'),$action])){$validator->errors()->add('page',trans('JOBLANG::Employment_Stages.page'));}
             }elseif($action == 'create'){
-                $people=Employment_People::where('NID',self::$nid)->where('Annonce_id',self::$annonce->id)->first();
+                $people=Employment_People::where('nid',self::$nid)->where('annonce_id',self::$annonce->id)->first();
                 if($people){
                     $validator->errors()->add('nid',trans('JOBLANG::Apply.nid_Already_Exists'));
                 }
-            }elseif($action == 'search'){}
-            
-            
+            }elseif($action == 'search'){
+                $people=Employment_People::where('nid',self::$nid)->where('annonce_id',self::$annonce->id)->first();
+                if(!$people){
+                    $validator->errors()->add('nid',trans('JOBLANG::Apply.nid_Already_Exists'));
+                    self::$error->message=$validator->errors();self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
+                }
+            }
+
+
         }else{
-            if(self::$annonce->Employment_Stages->functionName->Function !== self::$request->input('page')){$validator->errors()->add('page',trans('JOBLANG::Employment_Stages.page'));}
+
+            if(self::$annonce->Employment_Stages->functionName->function !== self::$request->input('page')){$validator->errors()->add('page',trans('JOBLANG::Employment_Stages.page'));}
         }
-        //٢٩٦٠٧٠٥١٢٠٣٠٠٤
         if(count($validator->errors())){
-            
             self::$error->message=$validator->errors();self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
         }
         return true;
     }
     public static function ShowJobReq(){
         $request=self::$request;
-        $request['page']=$request['actiontype'];
-
+        if($request->has('actiontype')){
+            $request['page']=$request['actiontype'] ;
+        }
         $rules=[
-            'annonceSlug'=>['required','exists:Employment_StartAnnonces,Slug'],
-            'jobSlug'=>'required|exists:Employment_Jobs,Slug',
+            'annonceid'=>['required','exists:employment_startannonces,id'],
+            'jobid'=>'required|exists:employment_jobs,id',
             'page'=>[
                 'required',
                 Rule::in(['showJob','create','apply']),
@@ -121,6 +133,7 @@ public static $erros;
             ],
         ];
         $attributes=[
+            'jobid'=>trans('JOBLANG::apply.Employment_Jobs.plural'),
             'nid'=>trans('JOBLANG::Employment_People.NID'),
             'page'=>trans('JOBLANG::Employment_Stages.page'),
             'annonceSlug'=>trans('JOBLANG::Employment_StartAnnonces.plural'),
@@ -130,6 +143,7 @@ public static $erros;
             'in'=> trans('JOBLANG::apply.errors.in',[':attribute']),
             'exists'=>trans('JOBLANG::apply.errors.exists',[':attribute']),
         ];
+
         $validator = Validator::make(self::$request->all(), $rules,$errorMessages,$attributes);
         if(count($validator->errors())){
             self::$error->message=$validator->errors();self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
@@ -140,87 +154,88 @@ public static $erros;
         self::setErrorClass();
         $request=self::$request;
         //dd($request->toArray());
+        //dd(strlen($request->connectmobile));
         $rules=[
             'actiontype'=>['required','in:create,complete'],
             'apply_date'=>['required','date'],
-            'annonceSlug'=>['required','exists:Employment_StartAnnonces,Slug'],
-            'jobSlug'=>['required','exists:Employment_Jobs,Slug'],
-            'Fname'=>['required','string','min:3'],
-            'Sname'=>['required','string','min:3'],
-            'Tname'=>['required','string','min:3'],
-            'Lname'=>['required','string','min:3'],
-            'NID'=>['required','numeric','digits:14'],
-            'BirthDate'=>['required','date'],
-            'Sex'=>['required','numeric','in:0,1'],
-            'AgeYears'=>['required','numeric','between:15,60'],
-            'AgeMonths'=>['required','numeric','between:0,12'],
-            'AgeDays'=>['required','numeric','between:0,30'],
-            'BornGov'=>['required','numeric','exists:Governorates,id'],
-            'BornCity'=>['required','numeric','exists:Cities,id'],
-            'LiveGov'=>['required','numeric','exists:Governorates,id'],
-            'LiveCity'=>['required','numeric','exists:Cities,id'],
-            'LiveAddress'=>['required','string'],
-            'ConnectLandline'=>['required','numeric','digits_between:6,11'],
-            'ConnectMobile'=>['required','numeric','digits:11'],
-            'ConnectEmail'=>['required','email:rfc,dns,spoof'],
-            'Health_id'=>['required','numeric','exists:Employment_Health,id'],
-            'MaritalStatus_id'=>['required','numeric','exists:Employment_MaritalStatus,id'],
-            'Arm_id'=>['required','numeric','exists:Employment_Army,id'],
-            'Ama_id'=>['required','numeric','exists:Employment_Ama,id'],
-            'Education_id'=>['required','numeric','exists:Mosama_Educations,id'],
-            'EducationYear'=>['required','numeric','digits:4'],
+            'annonceid'=>['required','exists:employment_startannonces,id'],
+            'jobid'=>['required','exists:employment_jobs,id'],
+            'fname'=>['required','string','min:3'],
+            'sname'=>['required','string','min:3'],
+            'tname'=>['required','string','min:3'],
+            'lname'=>['required','string','min:3'],
+            'nid'=>['required','numeric','digits:14'],
+            'birthdate'=>['required','date'],
+            'sex'=>['required','numeric','in:0,1'],
+            'ageyears'=>['required','numeric','between:15,60'],
+            'agemonths'=>['required','numeric','between:0,12'],
+            'agedays'=>['required','numeric','between:0,30'],
+            'borngov'=>['required','uuid','exists:governorates,id'],
+            'borncity'=>['required','uuid','exists:cities,id'],
+            'livegov'=>['required','uuid','exists:governorates,id'],
+            'livecity'=>['required','uuid','exists:cities,id'],
+            'liveaddress'=>['required','string'],
+            'connectlandline'=>['required','numeric','digits_between:6,11'],
+            'connectmobile'=>['required','numeric','digits_between:11,11'],
+            'connectemail'=>['required','email:rfc,dns,spoof'],
+            'health_id'=>['required','uuid','exists:employment_healths,id'],
+            'maritalstatus_id'=>['required','uuid','exists:employment_maritalstatus,id'],
+            'arm_id'=>['required','uuid','exists:employment_armies,id'],
+            'ama_id'=>['required','uuid','exists:employment_amas,id'],
+            'education_id'=>['required','uuid','exists:mosama_educations,id'],
+            'educationyear'=>['required','numeric','digits:4'],
             'accept_driver'=>['required','numeric','in:0,1'],
-            'DriverDegree'=>['exclude_if:accept_driver,1','required','numeric','exists:Employment_Drivers,id'],
-            'DriverStart'=>['exclude_if:accept_driver,1','required','date'],
-            'DriverEnd'=>['exclude_if:accept_driver,1','required','date','after:DriverStart'],
+            'driverdegree'=>['exclude_if:accept_driver,1','required','numeric','exists:employment_drivers,id'],
+            'driverstart'=>['exclude_if:accept_driver,1','required','date'],
+            'driverend'=>['exclude_if:accept_driver,1','required','date','after:driverstart'],
             'Khebra_type'=>['required','numeric','in:0,1,2'],
             'Khebra'=>['required','numeric','min:0'],
             'acceptall'=>['required','accepted'],
-            'Tamin'=>['required','numeric','min:0'],
+            'tamin'=>['required','numeric','min:0'],
             'uploades'=>['required','file','mimetypes:application/pdf','mimes:pdf','max:8192'],
-            'PeopleNewStageId'=>['exclude_if:actiontype,create','required','numeric',Rule::exists('Employment_PeopleNewStage','id')->where('People_id',request()->uid)],
-            'StageId'=>['exclude_if:actiontype,create','required','numeric',Rule::exists('Employment_PeopleNewStage','Stage_id')->where('People_id',request()->uid)],
+            'peoplenewstageid'=>['exclude_if:actiontype,create','required','numeric',Rule::exists('employment_peoplenewstage','id')->where('people_id',request()->uid)],
+            'stageid'=>['exclude_if:actiontype,create','required','numeric',Rule::exists('employment_peoplenewstage','stage_id')->where('people_id',request()->uid)],
         ];
         $attributes=[
             'actiontype'=>trans('JOBLANG::Employment_People.NID'),
             'apply_date'=>trans('JOBLANG::Employment_People.applyDate'),
-            'annonceSlug'=>trans('JOBLANG::Employment_People.NID'),
-            'job_id'=>trans('JOBLANG::Employment_People.NID'),
-            'Fname'=>trans('JOBLANG::Employment_People.Fname'),
-            'Sname'=>trans('JOBLANG::Employment_People.Sname'),
-            'Tname'=>trans('JOBLANG::Employment_People.Tname'),
-            'Lname'=>trans('JOBLANG::Employment_People.Lname'),
-            'NID'=>trans('JOBLANG::Employment_People.NID'),
-            'BirthDate'=>trans('JOBLANG::Employment_People.BirthDate'),
-            'Sex'=>trans('JOBLANG::Employment_People.Sex.Sex'),
-            'AgeYears'=>trans('JOBLANG::Employment_People.Age.AgeYears'),
-            'AgeMonths'=>trans('JOBLANG::Employment_People.Age.AgeMonths'),
-            'AgeDays'=>trans('JOBLANG::Employment_People.Age.AgeDays'),
-            'BornGov'=>trans('JOBLANG::Employment_people.bornPlace.Governorate'),
-            'BornCity'=>trans('JOBLANG::Employment_people.bornPlace.City'),
-            'LiveGov'=>trans('JOBLANG::Employment_People.LivePlace.Governorator'),
-            'LiveCity'=>trans('JOBLANG::Employment_People.LivePlace.City'),
-            'LiveAddress'=>trans('JOBLANG::Employment_People.LivePlace.Address'),
-            'ConnectLandline'=>trans('JOBLANG::Employment_people.Connection.LandLine'),
-            'ConnectMobile'=>trans('JOBLANG::Employment_people.Connection.Mobile'),
-            'ConnectEmail'=>trans('JOBLANG::Employment_people.Connection.Email'),
-            'Health_id'=>trans('JOBLANG::Employment_Health.Employment_Health'),
-            'MaritalStatus_id'=>trans('JOBLANG::Employment_MaritalStatus.Employment_MaritalStatus'),
-            'Arm_id'=>trans('JOBLANG::Employment_Army.Employment_Army'),
-            'Ama_id'=>trans('JOBLANG::Employment_Ama.Employment_Ama'),
-            'Education_id'=>trans('EMPLANG::Mosama_Educations.Mosama_Educations'),
-            'EducationYear'=>trans('JOBLANG::Employment_People.Mosama_Educations.year'),
+            'annonceid'=>trans('JOBLANG::Employment_People.NID'),
+            'jobid'=>trans('JOBLANG::Employment_People.NID'),
+            'fname'=>trans('JOBLANG::Employment_People.Fname'),
+            'sname'=>trans('JOBLANG::Employment_People.Sname'),
+            'tname'=>trans('JOBLANG::Employment_People.Tname'),
+            'lname'=>trans('JOBLANG::Employment_People.Lname'),
+            'nid'=>trans('JOBLANG::Employment_People.NID'),
+            'birthdate'=>trans('JOBLANG::Employment_People.BirthDate'),
+            'sex'=>trans('JOBLANG::Employment_People.Sex.Sex'),
+            'ageyears'=>trans('JOBLANG::Employment_People.Age.AgeYears'),
+            'agemonths'=>trans('JOBLANG::Employment_People.Age.AgeMonths'),
+            'agedays'=>trans('JOBLANG::Employment_People.Age.AgeDays'),
+            'borngov'=>trans('JOBLANG::Employment_people.bornPlace.Governorate'),
+            'borncity'=>trans('JOBLANG::Employment_people.bornPlace.City'),
+            'livegov'=>trans('JOBLANG::Employment_People.LivePlace.Governorator'),
+            'livecity'=>trans('JOBLANG::Employment_People.LivePlace.City'),
+            'liveaddress'=>trans('JOBLANG::Employment_People.LivePlace.Address'),
+            'connectlandline'=>trans('JOBLANG::Employment_people.Connection.LandLine'),
+            'connectmobile'=>trans('JOBLANG::Employment_people.Connection.Mobile'),
+            'connectemail'=>trans('JOBLANG::Employment_people.Connection.Email'),
+            'health_id'=>trans('JOBLANG::Employment_Health.Employment_Health'),
+            'maritalstatus_id'=>trans('JOBLANG::Employment_MaritalStatus.Employment_MaritalStatus'),
+            'arm_id'=>trans('JOBLANG::Employment_Army.Employment_Army'),
+            'ama_id'=>trans('JOBLANG::Employment_Ama.Employment_Ama'),
+            'education_id'=>trans('EMPLANG::Mosama_Educations.Mosama_Educations'),
+            'educationyear'=>trans('JOBLANG::Employment_People.Mosama_Educations.year'),
             'accept_driver'=>trans("JOBLANG::Employment_People.Employment_Drivers.DriverDegree"),
-            'DriverDegree'=>trans("JOBLANG::Employment_People.Employment_Drivers.DriverDegree"),
-            'DriverStart'=>trans("JOBLANG::Employment_People.Employment_Drivers.DriverStart"),
-            'DriverEnd'=>trans("JOBLANG::Employment_People.Employment_Drivers.DriverEnd"),
+            'driverdegree'=>trans("JOBLANG::Employment_People.Employment_Drivers.DriverDegree"),
+            'driverstart'=>trans("JOBLANG::Employment_People.Employment_Drivers.DriverStart"),
+            'driverend'=>trans("JOBLANG::Employment_People.Employment_Drivers.DriverEnd"),
             'Khebra_type'=>trans('JOBLANG::Employment_People.Khebra.type'),
             'Khebra'=>trans('JOBLANG::Employment_People.Khebra.years'),
             'acceptall'=>trans('JOBLANG::Employment_People.acceptall'),
-            'Tamin'=>trans('JOBLANG::Employment_people.Tamin.Tamin'),
+            'tamin'=>trans('JOBLANG::Employment_people.Tamin.Tamin'),
             'uploades'=>trans('JOBLANG::Employment_IncludedFiles.Employment_IncludedFiles'),
         ];
-        
+
         $errorMessages=[
             'required' => trans('JOBLANG::apply.errors.required',[':attribute']),
             'digits'=>trans('JOBLANG::apply.errors.digits',[':attributes']),
@@ -248,23 +263,23 @@ public static $erros;
         if(self::$request->has('nid')){
             self::$nid=trim(self::$request->input('nid'));
         }elseif(self::$request->has('NID')){
-            self::$nid=trim(self::$request->input('NID'));    
+            self::$nid=trim(self::$request->input('NID'));
         }
-        
-        self::$annonce= Employment_StartAnnonces::with('Employment_Stages')->where('Slug',self::$request->input('annonceSlug'))->first();
+
+        self::$annonce= Employment_StartAnnonces::with('Employment_Stages')->where('id',self::$request->input('annonceid'))->first();
         if(!self::$annonce){
-            $validator->errors()->add('annonceSlug',trans('JOBLANG::apply.errors.required',[trans('JOBLANG::Employment_StartAnnonces.plural')]));
+            $validator->errors()->add('annonceid',trans('JOBLANG::apply.errors.required',[trans('JOBLANG::Employment_StartAnnonces.plural')]));
         }else{
-            self::$job=Employment_Jobs::where('Slug', self::$request->input('jobSlug'))->where('Annonce_id',self::$annonce->id)->first();
+            self::$job=Employment_Jobs::where('id', self::$request->input('jobid'))->where('annonce_id',self::$annonce->id)->first();
             if(!self::$job){
-                $validator->errors()->add('jobSlug',trans('JOBLANG::apply.Employment_Jobs.selectJob'));
+                $validator->errors()->add('jobid',trans('JOBLANG::apply.Employment_Jobs.selectJob'));
             }
         }
         if(self::$request->input('actiontype') !== 'create'){
             //get job action
             $action=self::$annonce->Employment_Stages->functionName->Function;
             if($action == 'complete'){
-                $people=Employment_People::where('id',self::$request->input('uid'))->where('NID',self::$nid)->where('Annonce_id',self::$annonce->id)->with('Employment_PeopleNewStage')->first();
+                $people=Employment_People::where('id',self::$request->input('uid'))->where('NID',self::$nid)->where('annonce_id',self::$annonce->id)->with('Employment_PeopleNewStage')->first();
                 if(!$people){$validator->errors()->add('NID',trans('JOBLANG::Employment_People.NID'));self::$error->message=$validator->errors();self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);}
                 if(!$people->Employment_PeopleNewStage){$validator->errors()->add('actiontype',trans('JOBLANG::Employment_Stages.page'));self::$error->message=$validator->errors();self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);}
                 if(!$people->Employment_PeopleNewStage->last()){$validator->errors()->add('actiontype',trans('JOBLANG::Employment_Stages.page'));self::$error->message=$validator->errors();self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);}
@@ -275,15 +290,15 @@ public static $erros;
                 $fun=$fun->functionName->Function;
                 if($fun !== self::$request->input('actiontype')){$validator->errors()->add('actiontype',trans('JOBLANG::Employment_Stages.page'));}
             }elseif($action == 'create'){
-                $people=Employment_People::where('NID',self::$nid)->where('Annonce_id',self::$annonce->id)->first();
+                $people=Employment_People::where('NID',self::$nid)->where('annonce_id',self::$annonce->id)->first();
                 if($people){
                     $validator->errors()->add('nid',trans('JOBLANG::Apply.nid_Already_Exists'));
                 }
             }elseif($action == 'search'){}
-            
-            
+
+
         }else{
-            if(self::$annonce->Employment_Stages->functionName->Function !== self::$request->input('actiontype')){$validator->errors()->add('actiontype',trans('JOBLANG::Employment_Stages.page'));}
+            if(self::$annonce->Employment_Stages->functionName->function !== self::$request->input('actiontype')){$validator->errors()->add('actiontype',trans('JOBLANG::Employment_Stages.page'));}
         }
 
         if(count($validator->errors())){
@@ -300,7 +315,7 @@ public static $erros;
             'new_stage'=>['required','exists:Employment_Stages,id','numeric'],
             'new_res'=>['required','exists:Employment_Status,id','numeric'],
             'editor1'=>['required']
-        ];       
+        ];
         $attributes=[
             'publisher'=>'publisher',
             'new_res'=>trans('JOBLANG::Employment_People.NID'),
@@ -313,7 +328,7 @@ public static $erros;
             'exists'=>trans('JOBLANG::apply.errors.exists',[':attribute']),
             'uptoidsTextarea'=>trans('JOBLANG::apply.errors.exists',[':attribute']),
             'json'=>trans('JOBLANG::apply.errors.exists',[':attribute']),
-        ]; 
+        ];
         $validator = Validator::make(self::$request->all(), $rules,$errorMessages,$attributes);
         if(count($validator->errors())){
             self::$error->message=$validator->errors();self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);

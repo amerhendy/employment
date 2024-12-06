@@ -20,27 +20,32 @@ class Employment_StartAnnoncesAmerController extends AmerController
     use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\BulkDeleteOperation;
     use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\FetchOperation;
     use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\InlineCreateOperation;
+
     public function setup()
     {
-        AMER::setModel(Employment_StartAnnonces::class);
-        AMER::setRoute(config('Amer.employment.route_prefix') . '/Employment_StartAnnonces');
-        AMER::setEntityNameStrings(trans('JOBLANG::Employment_StartAnnonces.singular'), trans('JOBLANG::Employment_StartAnnonces.plural'));
-        /*
-        $this->Amer->setTitle(trans('JOBLANG::Employment_StartAnnonces.create'), 'create');
-        $this->Amer->setHeading(trans('JOBLANG::Employment_StartAnnonces.create'), 'create');
-        $this->Amer->setSubheading(trans('JOBLANG::Employment_StartAnnonces.create'), 'create');
-        $this->Amer->setTitle(trans('JOBLANG::Employment_StartAnnonces.edit'), 'edit');
-        $this->Amer->setHeading(trans('JOBLANG::Employment_StartAnnonces.edit'), 'edit');
-        $this->Amer->setSubheading(trans('JOBLANG::Employment_StartAnnonces.edit'), 'edit');
+        $modelName='Employment_StartAnnonces';
+        $this->tr=trans('JOBLANG::'.$modelName);
+        $model=Employment_StartAnnonces::class;
+        AMER::setModel($model);
+        $routePrefix=config('Amer.Employment.route_prefix');
+        AMER::setRoute($routePrefix . '/'.$modelName);
+        AMER::setEntityNameStrings($this->tr['singular'], $this->tr['plural']);
+        $this->Amer->setTitle($this->tr['create'], 'create');
+        $this->Amer->setHeading($this->tr['create'], 'create');
+        $this->Amer->setSubheading($this->tr['create'], 'create');
+        $this->Amer->setTitle($this->tr['edit'], 'edit');
+        $this->Amer->setHeading($this->tr['edit'], 'edit');
+        $this->Amer->setSubheading($this->tr['edit'], 'edit');
         $this->Amer->addClause('where', 'deleted_at', '=', null);
+        $this->setPermisssions($modelName);
+    }
+    public function setPermisssions($n){
         $this->Amer->enableDetailsRow ();
         $this->Amer->allowAccess ('details_row');
-        if(amer_user()->can('Employment_StartAnnonces-add') == 0){$this->Amer->denyAccess('create');}
-        if(amer_user()->can('Employment_StartAnnonces-trash') == 0){$this->Amer->denyAccess ('trash');}
-        if(amer_user()->can('Employment_StartAnnonces-update') == 0){$this->Amer->denyAccess('update');}
-        if(amer_user()->can('Employment_StartAnnonces-delete') == 0){$this->Amer->denyAccess('delete');}
-        if(amer_user()->can('Employment_StartAnnonces-show') == 0){$this->Amer->denyAccess('show');}
-        */
+        $accesslist=['update','list', 'show','trash','reorder','delete','create','clone','BulkDelete'];
+        foreach ($accesslist as $l) {
+            if(amer_user()->canper($n.'-'.$l) === false){$this->Amer->denyAccess($l);}
+        }
     }
     protected function setupShowOperation()
     {
@@ -55,24 +60,24 @@ class Employment_StartAnnoncesAmerController extends AmerController
                 'label'=>trans('AMER::Governorates.singular'),
             ],
             [
-                'name'=>'Number',
+                'name'=>'number',
                 'type'=>'Number',
                 'label'=>trans('JOBLANG::Employment_StartAnnonces.AnnonceNumber'),
             ],
             [
-                'name'=>'Year',
+                'name'=>'year',
                 'type'=>'year',
                 'label'=>trans('JOBLANG::Employment_StartAnnonces.AnnonceYear'),
                 'startyear'=>2022,
                 'endyear'=>2024,
             ],
             [
-                'name'=>'Description',
+                'name'=>'description',
                 'type'=>'textarea',
                 'label'=>trans('JOBLANG::Employment_StartAnnonces.Description'),
             ],
             [
-                'name'=>'Stage_id',
+                'name'=>'stage_id',
                 'type'=>'select',
                 'label'=>trans('JOBLANG::Employment_StartAnnonces.AnnonceStage'),
                 'model'=>'Amerhendy\Employment\App\Models\Employment_Stages',
@@ -87,7 +92,7 @@ class Employment_StartAnnoncesAmerController extends AmerController
                 'attribute'=>'Text',
             ],
             [
-                'name'=>'Status',
+                'name'=>'status',
                 'type'=>'radio',
                 'label'=>trans('JOBLANG::Employment_StartAnnonces.Status'),
                 'options'=>[
@@ -96,7 +101,7 @@ class Employment_StartAnnoncesAmerController extends AmerController
                 ]
             ],
             [
-                'name'=>'Slug',
+                'name'=>'slug',
                 'type'=>'text',
                 'attributes'=>['disabled' => 'disabled'],
             ],

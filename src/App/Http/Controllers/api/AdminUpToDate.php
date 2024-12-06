@@ -220,18 +220,18 @@ class AdminUpToDate extends AmerController
         $person=$data->Employment_PeopleNewData;
         unset($person->People_id);
         
-        $person->Job_id=new \stdClass;dd($person);
-        $person->Job_id->dfd='ds';
-        dd($person->Job_id,$person->Employment_Job);
-        dd($person->Job_id);
-        $person->Job_id->Code=$person->Employment_Job->Code;
-        $person->Job_id->Slug=$person->Employment_Job->Slug;
+        $person->job_id=new \stdClass;dd($person);
+        $person->job_id->dfd='ds';
+        dd($person->job_id,$person->Employment_Job);
+        dd($person->job_id);
+        $person->job_id->Code=$person->Employment_Job->Code;
+        $person->job_id->Slug=$person->Employment_Job->Slug;
         
-        //$person->Job_id->Mosama_JobNames=$person->Employment_Job->Mosama_JobNames->text;
+        //$person->job_id->Mosama_JobNames=$person->Employment_Job->Mosama_JobNames->text;
         dd($person->Employment_Job->Mosama_JobNames);
-        $person->Job_id->Mosama_Groups=$person->Employment_Job->Mosama_JobNames->Mosama_Groups->text;
-        $person->Job_id->Mosama_JobTitles=$person->Employment_Job->Mosama_JobNames->Mosama_JobTitles->text;
-        $person->Job_id->Mosama_Degrees=$person->Employment_Job->Mosama_JobNames->Mosama_Degrees->text;
+        $person->job_id->Mosama_Groups=$person->Employment_Job->Mosama_JobNames->Mosama_Groups->text;
+        $person->job_id->Mosama_JobTitles=$person->Employment_Job->Mosama_JobNames->Mosama_JobTitles->text;
+        $person->job_id->Mosama_Degrees=$person->Employment_Job->Mosama_JobNames->Mosama_Degrees->text;
         
         unset($person->Employment_Job);
         $person->FullName=$person->FullName; 
@@ -253,7 +253,7 @@ class AdminUpToDate extends AmerController
     public static function getApplydata($person){
         $data=new \stdClass();
             $data->id=$person['id'];
-            $data->Annonce_id=$person['Annonce_id'];$data->Job_id=$person['Job_id'];
+            $data->annonce_id=$person['annonce_id'];$data->job_id=$person['job_id'];
             $data->NID=$person['NID'];$data->Sex=$person['Sex'];
             $data->Fname=$person['Fname'];$data->Sname=$person['Sname'];$data->Tname=$person['Tname'];$data->Lname=$person['Lname'];
             $data->LiveGov=$person['LiveGov'];$data->LiveCity=$person['LiveCity'];$data->LiveAddress=$person['LiveAddress'];
@@ -321,7 +321,7 @@ class AdminUpToDate extends AmerController
             $person['Employment_PeopleNewData']['AgeDays']=$person->AgeDays;
             return $person['Employment_PeopleNewData']->toArray();
         }else{
-            return $person->only(['id','Annonce_id','Job_id','Sex','Fname','Sname','Tname','Lname','LiveGov','LiveCity','LiveAddress','BornGov','BornCity','BirthDate','AgeYears','AgeMonths','AgeDays','ConnectMobile','ConnectEmail','ConnectLandline','Health_id','MaritalStatus_id','Arm_id','Ama_id','Tamin','Khebra','Education_id','EducationYear','DriverDegree','DriverStart','DriverEnd','FileName','created_at','NID']);
+            return $person->only(['id','annonce_id','job_id','Sex','Fname','Sname','Tname','Lname','LiveGov','LiveCity','LiveAddress','BornGov','BornCity','BirthDate','AgeYears','AgeMonths','AgeDays','ConnectMobile','ConnectEmail','ConnectLandline','Health_id','MaritalStatus_id','Arm_id','Ama_id','Tamin','Khebra','Education_id','EducationYear','DriverDegree','DriverStart','DriverEnd','FileName','created_at','NID']);
         }
     }
     

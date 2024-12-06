@@ -1,5 +1,4 @@
 <?php
-
 namespace Amerhendy\Employment\App\Http\Controllers\api;
 use Amerhendy\Amer\App\Helpers\AmerHelper;
 use Illuminate\Support\Collection;
@@ -51,9 +50,9 @@ class PeopleStagesController extends AmerController
         switch ($wanted) {
             case  \Str::startsWith($wanted,'Html'):
                 $list=self::HtmlStagesList();
-                
+
                 break;
-            
+
             default:
                 $list=self::StagesList();
                 break;
@@ -158,7 +157,7 @@ class PeopleStagesController extends AmerController
                 $std->Message=self::prepare_message_for_print($value->Message,$messagetype);
             }
             $std->Type=$value->Type;
-            
+
             if(\Str::startsWith($value->Type,'Seatings')){
                 $std->Number=$value->Number;
                 if(!is_null($value->Committee_Date))
@@ -182,17 +181,17 @@ class PeopleStagesController extends AmerController
         return $newlist;
     }
     public static function newData($data,$accept=null,$message=null,$messagetype=null){
-        
+
         $stages_w_s=[];
         if($data->Employment_PeopleNewData ==null)return null;
         $element=$data->Employment_PeopleNewData;
         $stage=Employment_PeopleNewStage::with('Employment_Stages')->where('id',$element->Stage_id)->where('People_id',$element->People_id)->orderBy('created_at')->get('Stage_id')->first();
         if(!$stage)return null;
-        
+
         $stage=$stage->Stage_id;
         $result=$element['Result'];
         $newstage=Employment_PeopleNewStage::with('Employment_Stages')->where('id','>',$element->Stage_id)->where('People_id',$element->People_id)->orderBy('created_at')->get()->first();
-        
+
         //dd(self::$forsearch);
         //dd($newstage);
         $created_at=strtotime($element['created_at']);
@@ -223,7 +222,7 @@ class PeopleStagesController extends AmerController
                 $Message=$element->Message;
                 $created_at=strtotime($element->created_at);
                 $text=Employment_Stages::find($element->Stage_id);
-                
+
                 $st=new \stdClass();
                 $st->StageId=$stage;
                 $st->newStageId=$element->id;
@@ -263,23 +262,28 @@ class PeopleStagesController extends AmerController
             }else{
                 $result=$Employment_PeopleNewStage->Status_id;
             }
-            
+
             $created_at=strtotime($element->created_at);
             if($stage == 5){
                 $type='apply';
+                $text='AppliedGrievance';
             }elseif($stage == 5){
                 $type='Editorial';
+                $text='WritingGrievance';
             }else{
                 $type='Practical';
+                $text='PracticalGrievance';
             }
+            $text=trans('JOBLANG::Employment_Grievance.'.$text);
             $st=new \stdClass();
             $st->StageId=$stage;
+            $st->newStageId=$nextresult->id;
             $st->Result=$result;
             $st->CreatedAt=$created_at;
             $st->Type= 'Grievance_'.$type;
             $st->Message=null;
-            $text=Employment_Stages::find($stage);
-            $st->Text=$text->Text;
+            ///$text=Employment_Stages::find($stage);
+            $st->Text=$text;
             $stages_w_s[]=$st;
         }
         //set all grive
@@ -344,7 +348,7 @@ class PeopleStagesController extends AmerController
         return $stagws;
     }
     public static function LastStages($data,$accept=null,$message=null,$messagetype=null){
-        
+
         $list=new \stdClass();
         $list->stages=self::HtmlStagesList($data,$accept,$message,$messagetype);
         //$list= ['stages'=>self::HtmlStagesList($data,$accept,$message,$messagetype)];
@@ -364,7 +368,7 @@ class PeopleStagesController extends AmerController
                 //dd($entrylist);
             }
             $list->apply=$apply;
-            if(count($stagelist)){$list->LastStage=$stagelist[0];}else{$list->LastStage=null;}           
+            if(count($stagelist)){$list->LastStage=$stagelist[0];}else{$list->LastStage=null;}
             return $list;
     }
     public static function prepare_message_for_print($data,$messagetype=null)
@@ -384,17 +388,17 @@ class PeopleStagesController extends AmerController
                             $re[]=trans($b);
                         }
                     }
-                    
+
                 }
             }else{
                 $re[]=$data;
             }
         }
-            
+
         if($messagetype == 'array'){
             if(count($re)> 0){return $re;}else{return '';}
         }else{
             return implode(' - ',$re);
         }
     }
-}   
+}

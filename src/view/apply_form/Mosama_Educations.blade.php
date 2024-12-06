@@ -1,17 +1,17 @@
 <!-- education -->
-<div class="row text-right border-bottom">
-            <div class='col-lg-3 nsscwwbgcolor text-white text-center'>
+<div class="row text-right">
+            <div class='col-lg-3 bg-gradient text-white text-center'>
                 {{trans('JOBLANG::Employment_People.Mosama_Educations.Mosama_Educations')}}
             </div>
-            <div class='col col-lg'>
+            <div class='col col-lg rounded border'>
             <div class="row">
                    <div class="col-lg-12">
                         {{trans('JOBLANG::Employment_People.Mosama_Educations.Mosama_Educations')}}
-                        <select class="form-control" name="Education_id" id="Education_id" data-init-function='set_edu' option='Mosama_Educations' dd="text" placeholder="{{trans('EMPLANG::Mosama_Educations.Mosama_Educations')}}" old="{{old('Education_id') ?? $data->value->Education_id ?? ""}}"></select>
+                        <select class="form-control" name="education_id" id="education_id" option='Mosama_Educations' dd="text" placeholder="{{trans('EMPLANG::Mosama_Educations.Mosama_Educations')}}" old="{{old('education_id') ?? $data->value->education_id ?? ""}}" required></select>
                    </div>
                    <div class="col-lg-12">
                         {{trans('JOBLANG::Employment_People.Mosama_Educations.year')}}
-                       <input type="year" minlen='1' name="EducationYear" id="EducationYear"  style="width:100%" class="form-control" data-provide="datepicker"  onblur='trim(this)' placeholder="{{trans('JOBLANG::Employment_People.Mosama_Educations.year')}}" value="{{old('EducationYear') ?? $data->value->EducationYear ?? ""}}">
+                       <input type="year" minlen='1' name="educationyear" id="educationyear"  style="width:100%" class="form-control" data-provide="datepicker"  onblur='trim(this)' placeholder="{{trans('JOBLANG::Employment_People.Mosama_Educations.year')}}" value="{{old('educationyear') ?? $data->value->educationyear ?? ""}}"  required>
                    </div>
                </div>
             </div>

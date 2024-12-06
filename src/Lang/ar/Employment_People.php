@@ -3,7 +3,7 @@
  *  Created By Amer Hendy Language Consol For Laravel
  *      EGYPT -2023
  *     Employment_People
- * 
+ *
  * **********************************************************************************/
 return [
     'Employment_People'=>'المتقدمين',
@@ -33,12 +33,12 @@ return [
         'Governorate'=>'محافظة الميلاد',
         'City'=>'مدينة الميلاد',
     ],
-    
+
     'LivePlace'=>[
         'LivePlace'=>'محل الاقامة',
-        'Governorator'=>'المحافظة',
-        'City'=>'المدينة',
-        'Address'=>'العنوان',
+        'Governorator'=>'محافظة الاقامة',
+        'City'=>'مدينة الاقامة',
+        'Address'=>'عنوان الاقامة',
         'hint'=>'يتم كتابة العنوان طبقا للمكتوب ببطاقة الرقم القومى'
     ],
     'Connection'=>[

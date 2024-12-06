@@ -10,30 +10,22 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Model;
 use Amerhendy\Amer\App\Models\Traits\AmerTrait;
-use Cviebrock\EloquentSluggable\Sluggable;
-use Cviebrock\EloquentSluggable\SluggableScopeHelpers;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
 class Employment_Annonce extends Model
 {
-    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,Sluggable, SluggableScopeHelpers;
-    protected $table = 'Employment_Annonce';
+    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,HasUuids;
+    protected $table = 'employment_annonces';
     protected $primaryKey = 'id';
     public $incrementing = true;
     public $timestamps = true;
 
-    protected $fillable = ['Annonce_id','Text','Statue'];
+    protected $fillable = ['annonce_id',"text",'status'];
     protected $dates = ['deleted_at'];
     public static $list=[];
     public static $fileds=[];
-	public function sluggable(): array
-    {
-        return [
-            'slug' => [
-                'source' => [],
-            ],
-        ];
-    }
-    public function Employment_StartAnnonces()
+    public function employment_startannonces()
                 {
-                    return $this->hasOne(Employment_StartAnnonces::class,'id', 'Annonce_id');
+                    return $this->hasOne(employment_startannonces::class,'id', 'annonce_id');
                 }
 }

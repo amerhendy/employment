@@ -19,11 +19,11 @@ class Employment_Seatings extends Model
     public $timestamps = true;
     //public $cast=['Seatings'=>'json'];
 
-    protected $fillable = ['Stage_id','Seatings'];
+    protected $fillable = ['stage_id','Seatings'];
     protected $dates = ['deleted_at'];
-        public function Employment_Stages()
+        public function employment_stages()
         {
-            return $this->belongsTo(Employment_Stages::class, 'Stage_id');
+            return $this->belongsTo(employment_stages::class, 'stage_id');
         }
         public function setSeatings(){
             return json_decode($this->Seatings,true);

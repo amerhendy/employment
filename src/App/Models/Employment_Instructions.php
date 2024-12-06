@@ -10,36 +10,28 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Model;
 use Amerhendy\Amer\App\Models\Traits\AmerTrait;
-use Cviebrock\EloquentSluggable\Sluggable;
-use Cviebrock\EloquentSluggable\SluggableScopeHelpers;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
 class Employment_Instructions extends Model
 {
-    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,Sluggable, SluggableScopeHelpers;
-    protected $table = 'Employment_Instructions';
+    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,HasUuids;
+    protected $table = 'employment_instructions';
     protected $primaryKey = 'id';
     public $incrementing = true;
     public $timestamps = true;
 
-    protected $fillable = ['Text'];
+    protected $fillable = ["text"];
     protected $dates = ['deleted_at'];
     public static $list=[];
     public static $fileds=[];
-public function sluggable(): array
-    {
-        return [
-            'slug' => [
-                'source' => [],
-            ],
-        ];
-    }
-    public function employment_Job_Instructions()
+    public function employment_jobs_instructions()
         {
-            return $this->belongsToMany(Employment_Job::class, 'Employment_Instructions','id','id');
+            return $this->belongsToMany(Employment_Job::class, 'employment_instructions','id','id');
         }
         public function Employment_Job()
 
         {
-            return $this->belongsToMany(Employment_Job::class, 'employment_Job_Instructions','Instructions_id','Job_id')->withTrashed();
+            return $this->belongsToMany(Employment_Job::class, 'employment_jobs_instructions','instraction_id','job_id')->withTrashed();
 
         }
 }

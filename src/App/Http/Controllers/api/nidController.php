@@ -1,5 +1,4 @@
 <?php
-
 namespace Amerhendy\Employment\App\Http\Controllers\api;
 use Amerhendy\Amer\App\Helpers\AmerHelper;
 use \Amerhendy\Employment\App\Models\Employment_StartAnnonces;
@@ -11,7 +10,7 @@ use \Amerhendy\Amer\App\Http\Controllers\Base\AmerController;
 class nidController extends AmerController
 {
     use checkRequests,peopleTrait;
-    public static $AnnnonceSlug,$JobSlug;
+    public static $AnnnonceSlug,$JobSlug,$peopleDB;
     private static $annonce,$job,$nid,$people,$error,$request;
     public function __construct(){
         self::setErrorClass();
@@ -29,7 +28,7 @@ class nidController extends AmerController
      * check nid in:
      *  before apply
      *  apply
-     *  
+     *
      */
     public static function employment_apply_checknid(Request $request){
         self::setErrorClass();
@@ -38,32 +37,40 @@ class nidController extends AmerController
         if($errors !== true){
             return $errors;
         }
-        $peopleDB=self::EmploymentPeopleUsingNIDAnnonceJob();
-        if($peopleDB == false){
-            return false;
-        }
+        self::$peopleDB=self::EmploymentPeopleUsingNIDAnnonceJob();
         ////////////////////
         ////////////////check Stage//////////////////
-        $pageid=\Str::after(self::$annonce->Employment_Stages->Page,":");
-        if(\Str::before(self::$annonce->Employment_Stages->Page,":") == 'D'){
+        $pageid=\Str::after(self::$annonce->Employment_Stages->page,":");
+        if(\Str::before(self::$annonce->Employment_Stages->page,":") == 'D'){
             $page=\Amerhendy\Employment\App\Models\Employment_DinamicPages::where('id',$pageid)->first();
-            if($page->Function == 'complete'){   
+            if($page->function == 'complete'){
+
                 return self::onComplete();
-            }elseif($page->Function == 'create'){
+            }elseif($page->function == 'create'){
+
                 return self::oncreate();
-            }elseif($page->Function == 'search'){
+            }elseif($page->function == 'search'){
                 return self::onSearch();
             }else{
                 return self::$people;
             }
         }
+        if($peopleDB == false){
+            self::$error->message=trans("JOBLANG::apply.nid_not_Exists");self::$error->result='errorannonce';self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
+        }
         self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
     }
     private static function onComplete(){
-        if(!self::$people){
+        if(!self::$people && !self::$peopleDB){
             self::$error->message=trans("JOBLANG::apply.nid_not_Exists");self::$error->result='errorannonce';self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
         }
-        $st=new PeopleStagesController(self::$people);
+        $people=self::$people ?? self::$peopleDB;
+        if ($people instanceof \Illuminate\Database\Eloquent\Collection) {
+            $people=$people[0];
+        }elseif($people instanceof \Illuminate\Database\Eloquent\Model){
+
+        }
+        $st=new PeopleStagesController($people);
             //$st=$st::$person=self::$people;
         if($st::get('completeEntry')){
             self::$error->message=trans("JOBLANG::apply.Complete.doneBefore");self::$error->result='appliedBefore';self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
@@ -74,7 +81,7 @@ class nidController extends AmerController
                 self::$error->message=trans("JOBLANG::apply.Complete.notAloowed");self::$error->result='appliedBefore';self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
             }
         }
-        
+
     }
     private static function oncreate(){
             if(self::$people == null){

@@ -23,26 +23,32 @@ use \Amerhendy\Employers\App\Models\Mosama_Experiences;
 use \Amerhendy\Amer\App\Http\Controllers\Base\AmerController;
 trait applyTrait
 {
+    public static $reqmerge=[];
     public static function store()
     {
         $validator=Validator::make(self::$request->all(),[]);
-        $requirements=self::check_job_employer_requirements();
-        self::$request['Message']=$requirements;
         $store_file=self::store_file();
         if($store_file === false){
             $validator->errors()->add('uploades',trans('JOBLANG::Employment_People.Uploaded_files'));
             self::$error->message=$validator->errors();self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);
         }
-        $data=[];
-        $Employment_Jobs=self::$job;
-        $data['user']=self::sort_request_to_review();
-        self::$request['view']='json';
-        $job_annonce=self::getjobinfo();
-        $job_annonce=$job_annonce->getOriginalContent()['data'];
-        $data['job']= $job_annonce;
-        $data['annonce']=$job_annonce->Employment_StartAnnonces;
+        /*setMessage and result*/
+        self::check_job_employer_requirements();
+        self::setBasicJobInfo();
+        $data=self::sort_request_to_review();
+        if($data === 0){
+            return '';
+        }
+        $data->job=self::$job;
+        if(self::$request->has('id') && self::$request->has('test')){
+            $data->headerTitle=trans('JOBLANG::apply.pageHeaderTitle.successApply');
+        }else{
+            $data->headerTitle=trans('JOBLANG::apply.pageHeaderTitle.preview_data');
+            $data->headerTitleNote=trans('JOBLANG::apply.pageHeaderTitle.preview_dataNote');
+        }
         if(self::$request->actiontype == 'create' || self::$request->actiontype == 'complete')
         {
+            self::setRequestData();
             ///////////////////////////////
             //$success=['success'=>[100,100]];
             //return response()->json($success);
@@ -55,6 +61,7 @@ trait applyTrait
                 return response()->json($success);
             }
         }
+        return false;
     }
     public static function check_job_employer_requirements()
     {
@@ -66,7 +73,7 @@ trait applyTrait
         if(self::check_age() == false){
             $errors['Age']='JOBLANG::Employment_People.Age.Age';
         }
-        
+
         if(self::check_condetions('Employment_Ama',self::$request->Ama_id) == false){
             $errors['Ama_id']='JOBLANG::Employment_Ama.singular';
         }
@@ -85,7 +92,7 @@ trait applyTrait
         if(self::check_khebra() == false){
             $errors['Khebra']='EMPLANG::Mosama_Experiences.singular';
         }
-        if((int) $job->Driver == 1){
+        if((int) $job->driver == 1){
             $request['DriverDegree']=null;
             $request['DriverStart']=null;
             $request['DriverEnd']=null;
@@ -102,17 +109,18 @@ trait applyTrait
         if($placescheck !== true){$errors[]=$placescheck;}
         //$errors['Driver']=[['DriverDegree'=>'JOBLANG::Employment_People.Employment_Drivers.DriverDegree'],['DriverEnd'=>'JOBLANG::Employment_People.Employment_Drivers.DriverEnd']];
         $errors=self::flatten_requirements($errors);
-        return $errors;
+        self::$reqmerge['message']=json_encode($errors);
+        if(count($errors)){self::$reqmerge['result']='60821f0e-bff3-4b05-81b7-d7401c97808e';}else{self::$reqmerge['result']='c3fc3ced-2bf3-41ee-a411-9bfb4b004a62';}
     }
     public static function check_age()
     {
-        if(self::$request->AgeYears == self::$job->Age){
-            if((self::$request->AgeMonths> 0) || (self::$request->AgeDays> 0)){
+        if((int)self::$request->ageyears == (int)self::$job->age){
+            if(((int)self::$request->agemonths> 0) || ((int)self::$request->agedays> 0)){
                 return false;
             }
             return true;
         }
-        if(self::$request->AgeYears > self::$job->Age){
+        if((int)self::$request->ageyears > (int)self::$job->age){
             return false;
         }
         return true;
@@ -120,7 +128,6 @@ trait applyTrait
     public static function check_khebra()
     {
         $target=self::$job;$table="Mosama_Experiences";$time=self::$request['Khebra'];$type=self::$request['Khebra_type'];
-        //'Mosama_Experiences',self::$request['Khebra'],self::$request['Khebra_type']
         $times=[];
         $exp=$target->Mosama_JobNames->$table;
         $expA=$exp->toArray();
@@ -152,7 +159,6 @@ trait applyTrait
     public static function check_condetions($table,$people)
     {
         $con=self::$job->{$table};
-        
         $ids=[];
         foreach($con as $a) {
             $ids[]=$a['id'];
@@ -164,7 +170,7 @@ trait applyTrait
     }
     public static function check_driver_degree()
     {
-        $target=self::$job->Employment_Drivers;$degree=$request['DriverDegree'];$start=$request['DriverStart'];$end=$request['DriverEnd'];
+        $target=self::$job->Employment_Drivers;$degree=self::$request['driverdegree'];$start=self::$request['driverstart'];$end=self::$request['driverend'];
         if(!count($target)){return 'error';}
         $ids=[];
         foreach($target as $a=>$b){
@@ -219,64 +225,33 @@ trait applyTrait
     }
     private static function apply_submit()
     {
-        $request=self::$request;
-        if(self::$request->actiontype == 'create'){
-            self::$request['Stage_id']=self::$annonce->Stage_id;
-            self::$request['Annonce_id']=self::$annonce->id;
-        }
-        if(self::$request->actiontype == 'complete'){
-            self::$request['People_id']=self::$request->uid;
-            self::$request['Stage_id']=self::$request['PeopleNewStageId'];
-        }
-        self::$request['Job_id']=self::$job->id;
-        if(self::$job->Driver == '1'){
-            self::$request['DriverDegree']=null;
-            self::$request['DriverStart']=null;
-            self::$request['DriverEnd']=null;
-        }
-        if(count($request->Message)){self::$request['Result']=2;}else {self::$request['Result']=1;}
-
-        //if(!$request->has('ConnectLandline')){$request->merge(['ConnectLandline' => null]);}
-        if(!self::$request->has('ConnectLandline')){self::$request['ConnectLandline'] = null;}
-        if(!self::$request->has('ConnectMobile')){self::$request['ConnectMobile'] = null;}
-        if(!self::$request->has('ConnectEmail')){self::$request['ConnectEmail'] = null;}
-        if(!self::$request->has('Arm_id')){self::$request['Arm_id'] = null;}
-        if(!self::$request->has('Ama_id')){self::$request['Employment_Ama'] = null;}
-        if(!self::$request->has('Tamin')){self::$request['Tamin'] = null;}
-        if(!self::$request->has('Khebra')){self::$request['Khebra'] = null;}else{
-            self::$request['Khebra'] = json_encode([self::$request->input('Khebra_type'),self::$request->input('Khebra')]);
-        }
-        if(!self::$request->has('Message')){self::$request['Message'] = null;}else{
-            if(is_array(self::$request->input('Message'))){
-                if(!count(self::$request->input('Message'))){
-                    self::$request['Message'] =null;
-                }else{
-                    $messages=\Arr::map(self::$request->input('Message'),function($v,$k){
-                        return trans($v);
-                    });
-                    self::$request['Message'] = json_encode([$request->input('Message')]);
-                }
-            }
-        }
-        if(!self::$request->has('DriverDegree')){self::$request->merge(['DriverDegree' => null]);}
-        if(!self::$request->has('DriverStart')){self::$request->merge(['DriverStart' => null]);}
-        if(!self::$request->has('DriverEnd')){self::$request->merge(['DriverEnd' => null]);}
-        self::$request->merge(['created_at' => self::$request->input('apply_date')]);
-        self::$request->merge(['updated_at' => null]);
-        self::$request->merge(['deleted_at' => null]);
-        self::$request->merge(['deleted_at' => null]);
         $arrRequest=self::$request->toArray();
-        $arrRequest['id']=self::newid();
-            $unset=['_token','annonce_id','job_id','_method','apply_date','Khebra_type','actiontype','uploades','acceptall'];
+        $arrRequest['id']=(string) \str::uuid();
+        $unset=['_token','_method','apply_date','Khebra_type','acceptall','accept_driver','actiontype','annonce','job','uploades'];
+        if(self::$request->input('actiontype') == 'create'){
+            $unset[]='annonceid';
+            $unset[]='jobid';
+            $unset[]='select_job';
+        }
         if(self::$request->actiontype == 'complete'){
             $unset=array_merge($unset,['uid','NID','BirthDate','Sex','AgeYears','AgeMonths','AgeDays','uinid','new_file_name','select_job']);
         }
         foreach ($unset as $key => $value) {
             unset($arrRequest[$value]);
         }
-        self::$request->merge(['uploades'=>$request['uploades']->getClientOriginalName()]);
+        self::$request->merge(['uploades'=>self::$request['uploades']->getClientOriginalName()]);
         if(self::$request->actiontype == 'create'){
-            $insert=Employment_people::create($arrRequest);
+            $insert=new Employment_people;
+            $columns = \Schema::getColumnListing($insert->getTable());
+            $nwe=[];
+            foreach ($columns as $key => $value) {
+                $vl=$arrRequest[$value];
+                if(\Str::isUuid($vl)){
+                    //$vl="'".$vl."'";
+                }
+                $insert->{$value}=$vl;
+            }
+            $insert->saveOrFail();
         }elseif(self::$request->actiontype == 'complete'){
             $insert=Employment_PeopleNewData::create($arrRequest);
         }
@@ -298,7 +273,7 @@ trait applyTrait
             $los['Stage_id']=3;
             $los['created_at']=now();
         }
-        
+
         if(self::$request->actiontype == 'create'){
             /*$newstage=Employment_PeopleNewStage::create($los);
             if(!$newstage){
@@ -306,26 +281,20 @@ trait applyTrait
             }
             */
         }
-        $testid=self::insertLogDB($request);
+        $testid=self::insertLogDB(self::$request);
         self::$request->merge(['test'=>$testid]);
-        return [self::$request->input('test'),$request->input('id')];
-    }
-    public static function insertLogDB(Request $request){
-        $id=AmerHelper::LstTableID('Employment_ApplyLog');
-        $dbcode=json_encode($request->all());
-        $testid=\DB::table('Employment_ApplyLog')->insertGetId(['id'=>$id,'userData' => $dbcode]);
-        return $testid;
+        return [self::$request->input('test'),self::$request->input('id')];
     }
     public static function store_file(){
         if(self::$request->actiontype == 'create'){
-            $newfile=self::$request['NID']. '.pdf';
+            $newfile=self::$request['nid'].'-'.md5(time() . rand() . \Str::random(40)). '.pdf';
         }else{
             $newfile=self::$request->input('new_file_name');
-            $newfile=self::$request['NID'].'-'.md5(time() . rand() . \Str::random(40)). '.pdf';
+            $newfile=self::$request['nid'].'-'.md5(time() . rand() . \Str::random(40)). '.pdf';
         }
-        $path = self::$request->file('uploades')->storeAs(config('Amer.employment.root_disk_name'), $newfile);
+        $path = self::$request->file('uploades')->storeAs(config('Amer.Employment.root_disk_name'), $newfile);
         if($path){
-            self::$request['FileName']=$path;
+            self::$request['filename']=$path;
             return true;
         }else{
             return false;
@@ -356,7 +325,7 @@ trait applyTrait
         if(($pd[0] !== 'D') AND ($pd[0] !== 'd')){return ['result'=>false];}
         $di=Employment_DinamicPages::where('id',$pd[1])->get()->toArray();
         if(!sizeof($di)){return ['result'=>false];}
-        if($di[0]['Text'] !== 'complete'){return ['result'=>false];}
+        if($di[0]['text'] !== 'complete'){return ['result'=>false];}
         $result['result']=true;
         $result['stage']=$lss['id'];
         $data=Employment_People::where('id',$id)->get()->toArray();
@@ -409,7 +378,7 @@ trait applyTrait
             }
             return $result;
         }
-        }   
+        }
         private static function newid(){
             if(self::$request->actiontype == 'create'){
                 return AmerHelper::LstTableID('Employment_People');
@@ -418,168 +387,178 @@ trait applyTrait
             }
         }
         public static function sort_request_to_review(){
-            $request=self::$request->all();$annonce=self::$annonce;$job=self::$job;
-            $data=[];
-            if(isset($request['id'])){
-                $data['uid']=$request['id'];
-            }elseif(isset($request['uid'])){
-                $data['uid']=$request['uid'];
+            $request=self::$request;$annonce=self::$annonce;$job=self::$job;
+            $data=new \stdClass;
+            if($request->has('id')){
+                self::$request->merge(['uid',$request->input('id')]);
+                $request=self::$request;
+                $data->uid=$request->input('uid');
+            }elseif($request->has('uid')){
+
+                $data->uid=$request->input('uid');
             }
-            $data['apply_date']=self::$request['apply_date'];
-            if(self::$request['actiontype'] == 'create'){$data['actiontype']=__('JOBLANG::apply.apply_buttom_apply');}else{$data['actiontype']=__('JOBLANG::apply.Complete_buttom_apply');}
-            $data['fullname']=implode(" ",[self::$request['Fname'],self::$request['Sname'],self::$request['Tname'],self::$request['Lname']]);
-            if(isset($request['uid'])){
-                $peo=Employment_People::where('id',$request['uid'])->first();
+            $data->apply_date=$request->input('apply_date');
+            if($request->input('actiontype') === 'create'){
+                $data->actiontype=__('JOBLANG::apply.apply_buttom_apply');
+            }else{
+                $data->actiontype=__('JOBLANG::apply.Complete_buttom_apply');
+            }
+            $data->fullname=implode(' ',[$request->input('fname'),$request->input('sname'),$request->input('tname'),$request->input('lname')]);
+            if($request->has('uid')){
+                $peo=Employment_People::where('id',$request->input('uid'))->first();
                 if(!$peo){return 0;}
-                $data['NID']=$peo->NID;
-                $data['BirthDate']=$peo->BirthDate;
-                if($peo->Sex == '1'){$peo->Sex=trans('JOBLANG::Employment_People.Sex.Male');}else{$peo->Sex=trans('JOBLANG::Employment_People.Sex.Female');}
-                $data['Sex']=$peo->Sex;
-                $data['age']=$peo->AgeYears.'/'.$peo->AgeMonths.'/'.$peo->AgeDays;
+                $data->NID=$peo->nid;
+                $data->BirthDate=$peo->birthdate;
+                if($peo->sex == '1'){$peo->sex=trans('JOBLANG::Employment_People.Sex.Male');}else{$peo->sex=trans('JOBLANG::Employment_People.Sex.Female');}
+                $data->Sex=$peo->sex;
+                $data->age=$peo->Age;
             }else{
-                $data['NID']=$request['NID'];
-                $data['BirthDate']=$request['BirthDate'];
-                if(self::$request['Sex'] == '1'){$data['Sex']=trans('JOBLANG::Employment_People.Sex.Male');}else{$data['Sex']=trans('JOBLANG::Employment_People.Sex.Female');}
-                $data['age']=implode("/",[self::$request['AgeYears'],self::$request['AgeMonths'],self::$request['AgeDays']]);
+                $data->NID=$request->nid;
+                $data->BirthDate=$request->birthdate;
+                if($request->sex == '1'){$sex=trans('JOBLANG::Employment_People.Sex.Male');}else{$sex=trans('JOBLANG::Employment_People.Sex.Female');}
+                $data->Sex=$sex;
+                $Age=new \stdClass();
+                $Age->ageyears=$request->ageyears;
+                $Age->agemonths=$request->agemonths;
+                $Age->agedays=$request->agedays;
+                $data->age=$Age;
             }
-            $BornGov=Governorates::where('id',self::$request['BornGov'])->first();
-            $BornCity=Cities::where('id',self::$request['BornCity'])->first();
-            $data['birth_blace']=implode(' - ',[$BornGov->Name,$BornCity->Name]);
-            $LiveGov=Governorates::where('id',$request['LiveGov'])->first();
-            $LiveCity=Cities::where('id',$request['LiveCity'])->first();
-            $data['live_place']=implode(' - ',[$LiveGov->Name,$BornCity->LiveCity,self::$request['LiveAddress']]);
-            $data['ConnectLandline']=self::$request['ConnectLandline'];
-            $data['ConnectMobile']=self::$request['ConnectMobile'];
-            $data['ConnectEmail']=self::$request['ConnectEmail'];
-            $Employment_Health=Employment_Health::withTrashed()->where('id',self::$request['Health_id'])->first();
-            $data['Health_id']=$Employment_Health->Text;
-            $Employment_MaritalStatus=Employment_MaritalStatus::withTrashed()->where('id',self::$request['MaritalStatus_id'])->first();
-            $data['MaritalStatus_id']=$Employment_MaritalStatus->Text;
-            $Employment_Army=Employment_Army::withTrashed()->where('id',self::$request['Arm_id'])->first();
-            $data['Employment_Army']=$Employment_Army->Text;
-            $Employment_Ama=Employment_Ama::withTrashed()->where('id',self::$request['Ama_id'])->first();
-            $data['Employment_Ama']=$Employment_Ama->Text;
-            $Mosama_Educations=Mosama_Educations::withTrashed()->where('id',self::$request['Education_id'])->first();
-            $data['Education_id']=$Mosama_Educations->text;
-            $data['EducationYear']=$request['EducationYear'];
-            if(self::$request->has('accept_driver')){
-                $data['accept_driver']=(int) self::$request->input('accept_driver');
-                if((int) self::$request->input('accept_driver') !== 1){
-                    $Employment_Drivers=Employment_Drivers::withTrashed()->where('id',self::$request['DriverDegree'])->first();
-                    if($Employment_Drivers){$data['DriverDegree']=$Employment_Drivers->Text;$data['DriverStart']=self::$request['DriverStart'];$data['DriverEnd']=self::$request['DriverEnd'];}
+
+            $BornGov=Governorates::where('id',self::$request->input('borngov'))->first();
+            $BornCity=Cities::where('id',self::$request->input('borncity'))->first();
+            $birth_place=new \stdClass();
+            $birth_place->BornGov=$BornGov->name;
+            $birth_place->BornCity=$BornCity->name;
+            $data->birth_place=$birth_place;
+            $LiveGov=Governorates::where('id',self::$request->input('livegov'))->first();
+            $LiveCity=Cities::where('id',self::$request->input('livecity'))->first();
+            $live_place=new \stdClass();
+            $live_place->LiveGov=$LiveGov->name;
+            $live_place->LiveCity=$LiveCity->name;
+            $live_place->liveaddress=self::$request->input('liveaddress');
+            $data->live_place=$live_place;
+            $data->ConnectLandline=$request->input('connectlandline');
+            $data->ConnectMobile=$request->input('connectmobile');
+            $data->ConnectEmail=$request->input('connectemail');
+            //
+            $Employment_Health=Employment_Health::withTrashed()->where('id',$request->input('health_id'))->first();
+            $data->Health_id=$Employment_Health->text ?? null;
+            $Employment_MaritalStatus=Employment_MaritalStatus::withTrashed()->where('id',$request->input('maritalstatus_id'))->first();
+            $data->MaritalStatus_id=$Employment_MaritalStatus->text ?? null;
+            $Employment_Army=Employment_Army::withTrashed()->where('id',$request->input('arm_id'))->first();
+            $data->Employment_Army=$Employment_Army->text ?? null;
+            $Employment_Ama=Employment_Ama::withTrashed()->where('id',$request->input('ama_id'))->first();
+            $data->Employment_Ama=$Employment_Ama->text ?? null;
+            $Mosama_Educations=Mosama_Educations::withTrashed()->where('id',$request->input('education_id'))->first();
+            $data->Education_id=$Mosama_Educations->text ?? null;
+            $data->EducationYear=$request->input('educationyear');
+            if($request->has('accept_driver')){
+                $data->accept_driver=(int) $request->input('accept_driver');
+                if((int) $request->input('accept_driver') !== 1){
+                    $Employment_Drivers=Employment_Drivers::withTrashed()->where('id',self::$request['driverdegree'])->first();
+                    if($Employment_Drivers){
+                        $data->DriverDegree=$Employment_Drivers->text;$data->DriverStart=$request->input('driverstart');$data->DriverEnd=$request->input('DriverEnd');
+                    }else{
+                        $data->DriverDegree=$data->DriverStart=$data->DriverEnd=null;
+                    }
                 }else{
-                    $data['DriverDegree']=$data['DriverStart']=$data['DriverEnd']=null;
+                    $data->DriverDegree=$data->DriverStart=$data->DriverEnd=null;
                 }
             }
-            
-            if(isset(self::$request['Khebra_type'])){
+            if($request->has('Khebra_type')){
                 $khebs=[2=>trans("EMPLANG::Mosama_Experiences.enum_2"),0=>trans("EMPLANG::Mosama_Experiences.enum_0"),1=>trans("EMPLANG::Mosama_Experiences.enum_1")];
-                $data['Khebra_type']=$khebs[self::$request['Khebra_type']];
+                $data->Khebra_type=$khebs[$request->input('Khebra_type')];
             }
-            if(\Str::isJson(self::$request['Khebra'])){
-                $data['Khebra']=json_decode(self::$request['Khebra'],true);
-                if(is_array($data['Khebra'])){
-                    $data['Khebra']=$data['Khebra'][1];
+            if(\Str::isJson($request->input('Khebra'))){
+                $data->Khebra=json_decode($request->input('Khebra'),true);
+                if(is_array($data->Khebra)){
+                    $data->Khebra=$data->Khebra[1];
                 }else{
-                    $data['Khebra']=$data['Khebra'];
-                }
-                
-            }else{
-                $data['Khebra']=self::$request['Khebra'];
-            }
-            $data['Tamin']=self::$request['Tamin'];
-            if(!empty(self::$request['uploades'])){
-                if(gettype(self::$request['uploades']) == 'string'){
-                    $data['uploades']=self::$request['uploades'];
-                }else{
-                    $data['uploades']=self::$request['uploades']->getClientOriginalName();
+                    $data->Khebra=$data->Khebra;
                 }
             }else{
-                $data['uploades']=null;
+                $data->Khebra=$request->input('Khebra');
             }
-            //$reqtype
+            $data->Tamin=$request->input('tamin');
+            if(!empty($request->file('uploades'))){
+                if(gettype($request->file('uploades')) == 'string'){
+                    $data->uploades=$request->file('uploades');
+                }else{
+                    $data->uploades=$request->file('uploades')->getClientOriginalName();
+                }
+            }else{
+                $data->uploades=null;
+            }
             return $data;
         }
-        public static function getjobInfo(){
+        public static function getjobInfo($Object=null,$show='one'){
+            $newresult=[];
             $request=self::$request;
-            //check request
-            //jobSlug,annonceSlug,page
-            if(!isset(self::$job) || self::$job == null){
-                $check=self::ShowJobReq();
-                if(!$check){
-                    return $check;
+            if(is_null($Object)){
+                if($request->has('jobid')){
+                    if(!is_array($request->input('jobid'))){
+                        $jobid=[$request->input('jobid')];
+                    }else{
+                        $jobid=$request->input('jobid');
+                    }
+                    $Object=jobs::where('id',$jobid);
                 }
-                $annonceSlug=self::$annonce->Slug ?? self::$request->input('annonceSlug');
-                $data=jobs::with('Employment_StartAnnonces')
-                    ->with('Employment_StartAnnonces.Employment_Stages')
-                    ->with('Employment_StartAnnonces.Governorates')
-                    ->with('Employment_StartAnnonces.Employment_Qualifications')
-                    ->with('Mosama_JobTitles')
-                    ->with(['Mosama_JobNames','Mosama_JobNames.Mosama_Competencies','Mosama_JobNames.Mosama_Experiences','Mosama_JobNames.Mosama_Goals','Mosama_JobNames.Mosama_Skills','Mosama_JobNames.Mosama_Tasks','Mosama_JobNames.Mosama_Degrees'])
-                    ->with('Mosama_Groups')
-                    ->with('Employment_Ama')
-                    ->with('Employment_Army')
-                    ->with('Cities')
-                    ->with('Mosama_Educations')
-                    ->with('Employment_Health')
-                    ->with('Employment_IncludedFiles')
-                    ->with('Employment_Instructions')
-                    ->with('Employment_MaritalStatus')
-                    ->with('Employment_Qualifications')
-                    ->with('Employment_Drivers')
-                    ->where('Slug',$request->input('jobSlug'))
-                    ->whereHas('Employment_StartAnnonces',function($query)use($annonceSlug){
-                    return $query->where('Employment_StartAnnonces.Slug',$annonceSlug);
-                    })
-                    ->first();
-                    if(!$data){self::$error->message=trans('JOBLANG::Employment_Reports.errors.publicError',['name'=>trans('JOBLANG::Employment_Reports.errors.informations')]);self::$error->line=__LINE__;return \AmerHelper::responseError(self::$error,self::$error->number);}
+                $Object=$Object->get();
+            }
+            foreach ($Object as $key => $data) {
+                $result=new \stdClass;
+                $result->id=$data->id;
+                $result->code=$data->code;
+                if($data->description == 'null' || $data->description == null || $data->description == ''){
+                    $data->description=null;
+                }
+                $result->Description=$data->description;
+                $result->Count=$data->count;
+                $result->AgeIn=$data->ageformat;
+                $result->Driver=$data->driver;
+                $result->Mosama_Groups=$data->Mosama_JobNames->Mosama_Groups->text;
+                $result->Mosama_JobTitles=$data->Mosama_JobNames->Mosama_JobTitles->text;
+                $result->Mosama_JobNames=new \stdClass;
+                $result->Mosama_JobNames->Text=$data->Mosama_JobNames->text;
+                $result->Mosama_JobNames->Mosama_Degrees=$data->Mosama_JobNames->Mosama_Degrees->text;
+                $result->Mosama_JobNames->Mosama_Tasks=\Arr::map($data->Mosama_JobNames->Mosama_Tasks->toArray(),function($v,$k){return $v['text'];});
+                $result->Mosama_JobNames->Mosama_Skills=\Arr::map($data->Mosama_JobNames->Mosama_Skills->toArray(),function($v,$k){return $v['text'];});
+                $result->Mosama_JobNames->Mosama_Goals=\Arr::map($data->Mosama_JobNames->Mosama_Goals->toArray(),function($v,$k){return $v['text'];});
+                $result->Mosama_JobNames->Mosama_Experiences=\Arr::map($data->Mosama_JobNames->Mosama_Experiences->toArray(),function($v,$k){return [$v['type'],$v['time']];});
+                $result->Mosama_JobNames->Mosama_Competencies=\Arr::map($data->Mosama_JobNames->Mosama_Competencies->toArray(),function($v,$k){return $v['text'];});
+                $result->Employment_StartAnnonces=new \stdClass;
+                $result->Employment_StartAnnonces->Number=$data->Employment_StartAnnonces->number;
+                $result->Employment_StartAnnonces->Year=$data->Employment_StartAnnonces->year;
+                $result->Employment_StartAnnonces->Description=$data->Employment_StartAnnonces->description;
+                $result->Employment_StartAnnonces->Employment_Stages=[$data->Employment_StartAnnonces->Employment_Stages->text,(int)$data->Employment_StartAnnonces->Employment_Stages->front,$data->Employment_StartAnnonces->Employment_Stages->page,$data->Employment_StartAnnonces->Employment_Stages->functionName];
+                $result->Employment_StartAnnonces->Governorates=\Arr::map($data->Employment_StartAnnonces->Governorates->toArray(),function($v,$k){return $v['name'];});
+                $result->Employment_StartAnnonces->Employment_Qualifications=\Arr::map($data->Employment_StartAnnonces->Employment_Qualifications->toArray(),function($v,$k){return $v['text'];});
+                $result->Employment_Ama=\Arr::map($data->Employment_Ama->toArray(),function($v,$k){return $v['text'];});
+                $result->Employment_Army=\Arr::map($data->Employment_Army->toArray(),function($v,$k){return $v['text'];});
+                $result->Employment_Health=\Arr::map($data->Employment_Health->toArray(),function($v,$k){return $v['text'];});
+                $result->Employment_Instructions=\Arr::map($data->Employment_Instructions->toArray(),function($v,$k){return $v['text'];});
+                $result->Employment_MaritalStatus=\Arr::map($data->Employment_MaritalStatus->toArray(),function($v,$k){return $v['text'];});
+                $result->Employment_Qualifications=\Arr::map($data->Employment_Qualifications->toArray(),function($v,$k){return $v['text'];});
+                $result->Employment_Drivers=\Arr::map($data->Employment_Drivers->toArray(),function($v,$k){return $v['text'];});
+                $result->Employment_IncludedFiles=\Arr::map($data->Employment_IncludedFiles->toArray(),function($v,$k){return $v['filename'];});
+                $result->Mosama_Educations=\Arr::map($data->Mosama_Educations->toArray(),function($v,$k){return $v['text'];});
+                $result->Cities=\Arr::map($data->Cities->toArray(),function($v,$k){return $v["name"];});
+                $newresult[]=$result;
+            }
+
+            if($show == 'one'){
+                $result=$newresult[0];
+                if($request->view == 'pdf'){
+                    return \AmerHelper::responsedata(self::showJobPrint($result),1,1,'');
+                }elseif($request->view == 'json'){
+                    return \AmerHelper::responsedata($result,1,1,'');
+                }
+                return $result;
             }else{
-                $data=self::$job;
+                $result=$newresult;
+                return \AmerHelper::responsedata($result,1,1,'');
             }
-            
-            $result=new \stdClass;
-            $result->code=$data->Code;
-            if($data->Description == 'null' || $data->Description == null || $data->Description == ''){
-                $data->Description=null;
-            }
-            $result->Description=$data->Description;
-            $result->Slug=$data->Slug;
-            $result->Count=$data->Count;
-            $AgeIn=new \stdClass;
-            $AgeIn->Age=$data->Age;
-            $AgeIn->Day=\Carbon\Carbon::parse($data->AgeIn)->format('d');
-            $AgeIn->Month=\Carbon\Carbon::parse($data->AgeIn)->format('m');
-            $AgeIn->Year=\Carbon\Carbon::parse($data->AgeIn)->format('Y');
-            $result->AgeIn=$AgeIn;
-            $result->Driver=$data->Driver;
-            $result->Mosama_JobNames=new \stdClass;
-            $result->Mosama_JobNames->Text=$data->Mosama_JobNames->text;
-            $result->Mosama_JobNames->Mosama_Degrees=$data->Mosama_JobNames->Mosama_Degrees->text;
-            $result->Mosama_JobNames->Mosama_Tasks=\Arr::map($data->Mosama_JobNames->Mosama_Tasks->toArray(),function($v,$k){return $v['text'];});
-            $result->Mosama_JobNames->Mosama_Skills=\Arr::map($data->Mosama_JobNames->Mosama_Skills->toArray(),function($v,$k){return $v['text'];});
-            $result->Mosama_JobNames->Mosama_Goals=\Arr::map($data->Mosama_JobNames->Mosama_Goals->toArray(),function($v,$k){return $v['text'];});
-            $result->Mosama_JobNames->Mosama_Experiences=\Arr::map($data->Mosama_JobNames->Mosama_Experiences->toArray(),function($v,$k){return [$v['type'],$v['time']];});
-            $result->Mosama_JobNames->Mosama_Competencies=\Arr::map($data->Mosama_JobNames->Mosama_Competencies->toArray(),function($v,$k){return $v['text'];});
-            
-            $result->Mosama_JobTitles=$data->Mosama_JobTitles->text;
-            $result->Employment_StartAnnonces=new \stdClass;
-            $result->Employment_StartAnnonces->Number=$data->Employment_StartAnnonces->Number;
-            $result->Employment_StartAnnonces->Year=$data->Employment_StartAnnonces->Year;
-            $result->Employment_StartAnnonces->Description=$data->Employment_StartAnnonces->Description;
-            $result->Employment_StartAnnonces->Employment_Stages=[$data->Employment_StartAnnonces->Employment_Stages->Text,(int)$data->Employment_StartAnnonces->Employment_Stages->Front,$data->Employment_StartAnnonces->Employment_Stages->Page];
-            $result->Employment_StartAnnonces->Governorates=\Arr::map($data->Employment_StartAnnonces->Governorates->toArray(),function($v,$k){return $v['Name'];});
-            $result->Employment_StartAnnonces->Employment_Qualifications=\Arr::map($data->Employment_StartAnnonces->Employment_Qualifications->toArray(),function($v,$k){return $v['Text'];});
-            $result->Employment_Ama=\Arr::map($data->Employment_Ama->toArray(),function($v,$k){return $v['Text'];});
-            $result->Employment_Army=\Arr::map($data->Employment_Army->toArray(),function($v,$k){return $v['Text'];});
-            $result->Employment_Health=\Arr::map($data->Employment_Health->toArray(),function($v,$k){return $v['Text'];});
-            $result->Employment_Instructions=\Arr::map($data->Employment_Instructions->toArray(),function($v,$k){return $v['Text'];});
-            $result->Employment_MaritalStatus=\Arr::map($data->Employment_MaritalStatus->toArray(),function($v,$k){return $v['Text'];});
-            $result->Employment_Qualifications=\Arr::map($data->Employment_Qualifications->toArray(),function($v,$k){return $v['Text'];});
-            $result->Employment_Drivers=\Arr::map($data->Employment_Drivers->toArray(),function($v,$k){return $v['Text'];});
-            $result->Employment_IncludedFiles=\Arr::map($data->Employment_IncludedFiles->toArray(),function($v,$k){return $v['FileName'];});
-            $result->Mosama_Educations=\Arr::map($data->Mosama_Educations->toArray(),function($v,$k){return $v['text'];});
-            $result->Cities=\Arr::map($data->Cities->toArray(),function($v,$k){return $v['Name'];});
-            $result->Mosama_Groups=$data->Mosama_Groups->text;
+            dd($result);
             if($request->view == 'pdf'){
                 return \AmerHelper::responsedata(self::showJobPrint($result),1,1,'');
             }elseif($request->view == 'json'){
@@ -587,6 +566,89 @@ trait applyTrait
             }
             return \AmerHelper::responsedata(self::showJobPrint($result),1,1,'');
             dd($request->view);
-            
         }
-}
+
+    public static function create_review_qrcode($data,$req){
+        $qr=new \stdClass();
+        if(self::$request->input('actiontype') == 'create'){
+            if(self::$request->has(['id','test'])){
+                $qr->requestType='apply-review';
+                $qr->id=$req['id'];
+                $qr->test=$req['test'];
+            }else{
+                $testid=self::insertLogDB();
+                $qr->test=$testid;
+                $qr->requestType='review';
+            }
+        }
+        /*$qr->annonce=self::$annonce->id;
+        $qr->job=self::$job->id;
+        $qr->date=$data->apply_date;
+        $qr->NID=$data->NID;
+        $qr->actiontype=$req['actiontype'];*/
+
+        $qr=route('qrcode',['element'=>'pck?type=employment&action='.$qr->requestType.'&testid='.$qr->test]);
+        return $qr;
+        $amerhelper=new \AmerHelper();
+        dd($amerhelper::tokenencrypt($qr));
+        return $amerhelper::tokenencrypt($qr);
+    }
+
+    public static function insertLogDB(){
+        $request=self::$request;
+        $testid=\DB::table('employment_applylogs')->insertGetId(['id'=>\Str::uuid(),'userdata' => json_encode($request)]);
+        return $testid;
+    }
+    public static function setBasicJobInfo(){
+        self::$job=self::getjobInfo();
+        foreach(self::$job->Mosama_JobNames->Mosama_Experiences as $a=>$b){
+            if($b[1] == 0){
+                self::$job->Mosama_JobNames->Mosama_Experiences[$a]=trans("EMPLANG::Mosama_Experiences.year0");
+            }else{
+                if($b[0] == '1'){
+                    self::$job->Mosama_JobNames->Mosama_Experiences[$a][0]=trans("EMPLANG::Mosama_Experiences.enum_1");
+                }elseif($b[0] == '0'){
+                    self::$job->Mosama_JobNames->Mosama_Experiences[$a][0]=trans("EMPLANG::Mosama_Experiences.enum_0");
+                }
+                $translate=trans("EMPLANG::Mosama_Experiences.translate");
+                self::$job->Mosama_JobNames->Mosama_Experiences[$a] =(string) \Str::of($translate)->replaceArray('?', self::$job->Mosama_JobNames->Mosama_Experiences[$a]);
+            }
+        }
+
+    }
+    public static function setRequestData(){
+        $reqmerge=[];
+
+        self::SetReqactiontypeData();
+        if((int)self::$job->Driver == 1){
+            self::$reqmerge['driverdegree']=null;
+            self::$reqmerge['driverstart']=null;
+            self::$reqmerge['driverend']=null;
+        }
+        if(!self::$request->has('Khebra')){self::$reqmerge['Khebra'] = null;}else{
+            self::$reqmerge['khebra'] = json_encode([self::$request->input('Khebra_type'),self::$request->input('Khebra')]);
+        }
+        self::$reqmerge['created_at']=self::$request->input('apply_date');
+        self::$reqmerge['updated_at']=null;
+        self::$reqmerge['deleted_at']=null;
+        self::$request->merge(self::$reqmerge);
+    }
+    private static function SetReqactiontypeData(){
+        switch (self::$request->input('actiontype')) {
+            case 'create':
+                self::$reqmerge['stage_id']=self::$annonce->stage_id;
+                self::$reqmerge['annonce_id']=self::$annonce->id;
+                break;
+
+            case 'complete':
+                self::$reqmerge['people_id']=self::$request->input('uid');
+                self::$reqmerge['stage_id']=self::$request->input('PeopleNewStageId');
+                break;
+
+            default:
+            dd("SD");
+            break;
+        }
+        self::$reqmerge['job_id']=self::$job->id;
+    }
+    }

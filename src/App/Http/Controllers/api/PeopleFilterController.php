@@ -1,5 +1,4 @@
 <?php
-
 namespace Amerhendy\Employment\App\Http\Controllers\api;
 use Amerhendy\Amer\App\Helpers\AmerHelper;
 use Illuminate\Support\Collection;
@@ -44,7 +43,7 @@ class PeopleFilterController extends AmerController
             $afterclass->id=$b['id'];
             $afterclass->Stage_id=(int) $stages->StageId;
             $afterclass->Status_id=(int) $stages->Result;
-            $afterclass->Job_id=$jobs;
+            $afterclass->job_id=$jobs;
             $after[]=$afterclass;
         }
         $collection=collect($after);
@@ -52,7 +51,7 @@ class PeopleFilterController extends AmerController
         return $sorted
                 ->whereIn('Stage_id',$request->input('Stage_id'))
                 ->whereIn('Status_id',$request['Status_id'])
-                ->whereIn('Job_id',$request->input('Job_id'));
+                ->whereIn('job_id',$request->input('job_id'));
     }
     private static function prepareforAnnonce(){
         $data=self::$elequent;
@@ -66,7 +65,7 @@ class PeopleFilterController extends AmerController
             $afterclass->id=$b['id'];
             $afterclass->Stage_id=(int) $stages->StageId;
             $afterclass->Status_id=(int) $stages->Result;
-            $afterclass->Job_id=$jobs;
+            $afterclass->job_id=$jobs;
             $after[]=$afterclass;
         }
         $collection=collect($after);
@@ -78,7 +77,7 @@ class PeopleFilterController extends AmerController
         return $collection
                 ->whereIn('Stage_id',$request->input('Stage_id'))
                 ->whereIn('Status_id',$request['Status_id'])
-                ->whereIn('Job_id',$request->input('Job_id'));
+                ->whereIn('job_id',$request->input('job_id'));
     }
     private static function prepareforGrievance(){
         $after=[];
@@ -93,13 +92,13 @@ class PeopleFilterController extends AmerController
             $afterclass->Stage_id=(int) $sort->StageId;
             $afterclass->Status_id=(int) $sort->Result;
             $afterclass->GrievanceType= $sort->Type;
-            $afterclass->Job_id=$jobs;
+            $afterclass->job_id=$jobs;
             $after[]=$afterclass;
         }
         $collection=collect($after);
         $sorted = $collection->sortBy('id');
-        if((self::$request['Job_id'] == null) || (self::$request['Job_id'] == '')){
-            self::$request->merge(['Job_id'=>PeopleJobsController::allJobsIsd(self::$request['Annonce_id'])]);
+        if((self::$request['job_id'] == null) || (self::$request['job_id'] == '')){
+            self::$request->merge(['job_id'=>PeopleJobsController::allJobsIsd(self::$request['annonce_id'])]);
         }
 
         if((self::$request['GrievanceType'] == null) || (self::$request['GrievanceType'] == 'null') || (self::$request['GrievanceType'] == '')){
@@ -110,26 +109,26 @@ class PeopleFilterController extends AmerController
         dd(
             self::$request->input('GrievanceType'),
             $collection
-            ->whereIn('Job_id',self::$request->input('Job_id'))
+            ->whereIn('job_id',self::$request->input('job_id'))
             ->whereIn('GrievanceType',self::$request->input('GrievanceType'))
             ->whereIn('Status_id',self::$request->input('Status_id')),
             $collection
         );**/
         return $collection
-                ->whereIn('Job_id',self::$request->input('Job_id'))
+                ->whereIn('job_id',self::$request->input('job_id'))
                 ->whereIn('GrievanceType',self::$request->input('GrievanceType'))
                 ->whereIn('Status_id',self::$request->input('Status_id'));
     }
     private static function query(){
         $request=self::$request;
-        $annonceInput=$request->input('Annonce_id');
+        $annonceInput=$request->input('annonce_id');
         //check annonce first
         $data= Employment_People::with(['Employment_PeopleNewStage','Employment_PeopleNewData','Employment_Grievance','Employment_StartAnnonces','Employment_Job',
         'Employment_Education','Employment_Stages','Employment_PeopleDegrees','Employment_Seatings']);
         $data=$data->whereHas('Employment_StartAnnonces',function($query)use($annonceInput){
             if(isset($annonceInput)){
                 if(($annonceInput <> null) || ($annonceInput <> '')){
-                    $query->where('Annonce_id',$annonceInput);
+                    $query->where('annonce_id',$annonceInput);
                 }
             }
         });
@@ -143,15 +142,15 @@ class PeopleFilterController extends AmerController
         self::$elequent=$data;
     }
     private static function prepareAnnonceRequest($request,$errors){
-        $Stage_id=self::GetRequestElements($request,'Stage_id','Annonce_id',$errors);
-        $Status_id=self::GetRequestElements($request,'Status_id','Annonce_id',$errors);
-        $Job_id=self::GetRequestElements($request,'Job_id','Annonce_id',$errors);
+        $Stage_id=self::GetRequestElements($request,'Stage_id','annonce_id',$errors);
+        $Status_id=self::GetRequestElements($request,'Status_id','annonce_id',$errors);
+        $job_id=self::GetRequestElements($request,'job_id','annonce_id',$errors);
         if(is_object($Stage_id)){return $Stage_id;}
         if(is_object($Status_id)){return $Status_id;}
-        if(is_object($Job_id)){return $Job_id;}
+        if(is_object($job_id)){return $job_id;}
                 $data=[
-                    'Annonce_id'=>$request->input('Annonce_id'),
-                    'Job_id'=>$Job_id,
+                    'annonce_id'=>$request->input('annonce_id'),
+                    'job_id'=>$job_id,
                     'Status_id'=>$Status_id,
                     'Stage_id'=>$Stage_id,
                     'Section'=>self::$annonceSection
@@ -162,15 +161,15 @@ class PeopleFilterController extends AmerController
                 return true;
     }
     private static function prepareGrievanceRequest($request,$errors){
-            $GrievanceType=self::GetRequestElements($request,'GrievanceType','Annonce_id',$errors);
-            $GrievanceJob=self::GetRequestElements($request,'Job_id','Annonce_id',$errors);
-            $GrievanceResult=self::GetRequestElements($request,'GrievanceResult','Annonce_id',$errors);
+            $GrievanceType=self::GetRequestElements($request,'GrievanceType','annonce_id',$errors);
+            $GrievanceJob=self::GetRequestElements($request,'job_id','annonce_id',$errors);
+            $GrievanceResult=self::GetRequestElements($request,'GrievanceResult','annonce_id',$errors);
             if(is_object($GrievanceType)){return $GrievanceType;}
             if(is_object($GrievanceJob)){return $GrievanceJob;}
             if(is_object($GrievanceResult)){return $GrievanceResult;}
             $data=[
-                'Annonce_id'=>$request->input('Annonce_id'),
-                'Job_id'=>$GrievanceJob,
+                'annonce_id'=>$request->input('annonce_id'),
+                'job_id'=>$GrievanceJob,
                 'Status_id'=>$GrievanceResult,
                 'Stage_id'=>[null],
                 'GrievanceType'=>$GrievanceType,
@@ -182,12 +181,12 @@ class PeopleFilterController extends AmerController
     }
     private static function prepareSeatingsRequest($request,$errors){
         $Stage_id=config('Amer.employment.examStages')??[14,13,7];
-        $Job_id=self::GetRequestElements($request,'Job_id','Annonce_id',$errors);
+        $job_id=self::GetRequestElements($request,'job_id','annonce_id',$errors);
         if(is_object($Stage_id)){return $Stage_id;}
-        if(is_object($Job_id)){return $Job_id;}
+        if(is_object($job_id)){return $job_id;}
         $data=[
-            'Annonce_id'=>$request->input('Annonce_id'),
-            'Job_id'=>$Job_id,
+            'annonce_id'=>$request->input('annonce_id'),
+            'job_id'=>$job_id,
             'Stage_id'=>$Stage_id,
             'Status_id'=>[1,4],
             'Section'=>self::$SeatingSection
@@ -200,13 +199,13 @@ class PeopleFilterController extends AmerController
         if(!$request->has($wanted)){
             $errors->message=trans("JOBLANG::Employment_Reports.errors.pleaseSelectAnnonce"); $errors->line=__LINE__; $errors->wanted=$wanted; return $errors;
         }
-        $annonceElem='Annonce_id';
-        if($wanted == 'Job_id'){
+        $annonceElem='annonce_id';
+        if($wanted == 'job_id'){
             $ann=Employment_StartAnnonces::where('Slug',$request[$annonceElem])->get('id')->first();
             if(!$ann){
                 $errors->message=trans("JOBLANG::Employment_Reports.errors.pleaseSelectAnnonce"); $errors->line=__LINE__; $errors->wanted=$wanted; return $errors;
             }else{
-                $request->merge(['Annonce_id'=>$ann->id]);
+                $request->merge(['annonce_id'=>$ann->id]);
                 self::$request=$request;
             }
             $allData=PeopleJobsController::allJobsIsd($request[$annonceElem]);
@@ -247,9 +246,9 @@ class PeopleFilterController extends AmerController
         if(!$request->has('section')){
             $errors->message=trans("JOBLANG::Employment_Reports.errors.PleaseSelectSection"); $errors->line=__LINE__; return $errors;
         }
-        if(!$request->has('Annonce_id')){
+        if(!$request->has('annonce_id')){
             $errors->message=trans("JOBLANG::Employment_Reports.errors.pleaseSelectAnnonce"); $errors->line=__LINE__; return $errors;
-        }else if($request->input('Annonce_id') == ''){
+        }else if($request->input('annonce_id') == ''){
             $errors->message=trans("JOBLANG::Employment_Reports.errors.pleaseSelectAnnonce"); $errors->line=__LINE__; return $errors;
         }
         $sections=[self::$GrievanceSection,self::$annonceSection,self::$SeatingSection];
@@ -266,7 +265,7 @@ class PeopleFilterController extends AmerController
             return $retu;
         }
         return true;
-        //Stage_id,Status_id,Job_id
+        //Stage_id,Status_id,job_id
     }
     function Counts(Request $request){
         $request=self::perpareRequests($request);

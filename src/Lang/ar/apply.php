@@ -3,7 +3,7 @@
  *  Created By Amer Hendy Language Consol For Laravel
  *      EGYPT -2023
  *     Apply
- * 
+ *
  * **********************************************************************************/
 return [
     'showJobInfo'=>'عرض اشتراطات الوظيفة',
@@ -33,9 +33,11 @@ return [
     'apply_info_nid'=>'يرجى كتابة الرقم القومى صحيح 14 رقم',
     'age_applyed'=>'تم اضافة العمر',
     'bd_applyed'=>'تم اضافة تاريخ الميلاد',
-    
     'apply_buttom_apply'=>'تقديم',
     'Complete_buttom_apply'=>'تعديل البيانات',
+    'pleasefillinputs'=>'من فضلك اكمل البينات المطلوبة',
+    'data_entered'=>'تم ادخال البيانات',
+    'data_not_entered'=>'لم يتم ادخال البيانات',
     'preview_buttom_print'=>'طباعة',
     'review_apply'=>'مراجعة التقديم',
     'review_page_entry'=>'لينك ادخال البيانات',
@@ -59,6 +61,12 @@ return [
         'between'=>':attribute يجب ان يكون بين :min و :max',
         'startannoncesnotfound'=>'الاعلان غير صحيح',
         'jobNotFound'=>'الوظيفة غير صحيحة',
+        'upload'=>[
+            'moreThan1'=>'عدد الملفات المرفوعة يجب الا تزيد عن ملف واحد مجمع به كل المصوغات المطلوبة',
+            'NOtPDF'=>'الملف المطلوب يجب ان يكون بصيغة pdf',
+            'Size'=>'الملف المطلوب يجب الا يزيد عن :SIZE ميجا بايت',
+        ],
+        'CheckBox'=>'يجب الموافقة على الاشتراطات',
     ],
     'pagetitle'=>[
         'apply'=>'تقديم',

@@ -3,7 +3,7 @@
  *  Created By Amer Hendy Language Consol For Laravel
  *      EGYPT -2023
  *     Employment_Jobs
- * 
+ *
  * **********************************************************************************/
 return [
     'Employment_Jobs'=>'الوظائف',
@@ -31,5 +31,5 @@ return [
     'StatusDraft'=>'اخفاء',
     'CityBornLive'=>'محل الاقامة او الميلاد',
     'CityBornLivehint'=>'يتم اختيار المدينة حسب محافظات الاعلان',
-    
+
 ];

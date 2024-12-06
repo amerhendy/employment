@@ -10,30 +10,22 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Model;
 use Amerhendy\Amer\App\Models\Traits\AmerTrait;
-use Cviebrock\EloquentSluggable\Sluggable;
-use Cviebrock\EloquentSluggable\SluggableScopeHelpers;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
 class Employment_PeopleDegrees extends Model
 {
-    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,Sluggable, SluggableScopeHelpers;
-    protected $table = 'Employment_PeopleDegrees';
+    use HasFactory,SoftDeletes,AmerTrait,HasRoles,HasApiTokens,HasUuids;
+    protected $table = 'employment_peopledegrees';
     protected $primaryKey = 'id';
-    //protected $fillable=['People_id','Status_id','Message','Stage_id'];
+    //protected $fillable=['people_id','status_id','message','stage_id'];
     public $incrementing = true;
     public $timestamps = true;
     protected $dates = ['deleted_at'];
     public static $list=[];
     public static $fileds=[];
-public function sluggable(): array
-    {
-        return [
-            'slug' => [
-                'source' => [],
-            ],
-        ];
-    }
-    public function Employment_Stages()
+    public function employment_stages()
                 {
-                    return $this->hasOne(Employment_Stages::class,'id', 'Stage_id');
+                    return $this->hasOne(employment_stages::class,'id', 'stage_id');
                 }
     
 }

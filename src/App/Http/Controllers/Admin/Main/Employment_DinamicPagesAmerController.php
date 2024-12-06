@@ -5,9 +5,9 @@ use Illuminate\Support\Facades\DB;
 use \Amerhendy\Amer\App\Http\Controllers\Base\AmerController;
 use \Amerhendy\Amer\App\Helpers\Library\AmerPanel\AmerPanelFacade as AMER;
 use \Amerhendy\Employment\App\Http\Requests\Employment_DinamicPagesRequest as Employment_DinamicPagesRequest;
-
 class Employment_DinamicPagesAmerController extends AmerController
 {
+    private $tr;
     use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\ListOperation;
     use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\CreateOperation;
     //use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\CreateOperation;
@@ -22,25 +22,29 @@ class Employment_DinamicPagesAmerController extends AmerController
     use \Amerhendy\Amer\App\Http\Controllers\Base\Operations\InlineCreateOperation;
     public function setup()
     {
-        AMER::setModel(Employment_DinamicPages::class);
-        AMER::setRoute(config('Amer.employment.route_prefix') . '/Employment_DinamicPages');
-        AMER::setEntityNameStrings(trans('JOBLANG::Employment_DinamicPages.singular'), trans('JOBLANG::Employment_DinamicPages.plural'));
-        /*
-        $this->Amer->setTitle(trans('JOBLANG::Employment_DinamicPages.create'), 'create');
-        $this->Amer->setHeading(trans('JOBLANG::Employment_DinamicPages.create'), 'create');
-        $this->Amer->setSubheading(trans('JOBLANG::Employment_DinamicPages.create'), 'create');
-        $this->Amer->setTitle(trans('JOBLANG::Employment_DinamicPages.edit'), 'edit');
-        $this->Amer->setHeading(trans('JOBLANG::Employment_DinamicPages.edit'), 'edit');
-        $this->Amer->setSubheading(trans('JOBLANG::Employment_DinamicPages.edit'), 'edit');
+        $modelName='Employment_DinamicPages';
+        $this->tr=trans('JOBLANG::'.$modelName);
+        $model=Employment_DinamicPages::class;
+        AMER::setModel($model);
+        $routePrefix=config('Amer.Employment.route_prefix');
+        AMER::setRoute($routePrefix . '/'.$modelName);
+        AMER::setEntityNameStrings($this->tr['singular'], $this->tr['plural']);
+        $this->Amer->setTitle($this->tr['create'], 'create');
+        $this->Amer->setHeading($this->tr['create'], 'create');
+        $this->Amer->setSubheading($this->tr['create'], 'create');
+        $this->Amer->setTitle($this->tr['edit'], 'edit');
+        $this->Amer->setHeading($this->tr['edit'], 'edit');
+        $this->Amer->setSubheading($this->tr['edit'], 'edit');
         $this->Amer->addClause('where', 'deleted_at', '=', null);
+        $this->setPermisssions($modelName);
+    }
+    public function setPermisssions($n){
         $this->Amer->enableDetailsRow ();
         $this->Amer->allowAccess ('details_row');
-        if(amer_user()->can('Employment_DinamicPages-add') == 0){$this->Amer->denyAccess('create');}
-        if(amer_user()->can('Employment_DinamicPages-trash') == 0){$this->Amer->denyAccess ('trash');}
-        if(amer_user()->can('Employment_DinamicPages-update') == 0){$this->Amer->denyAccess('update');}
-        if(amer_user()->can('Employment_DinamicPages-delete') == 0){$this->Amer->denyAccess('delete');}
-        if(amer_user()->can('Employment_DinamicPages-show') == 0){$this->Amer->denyAccess('show');}
-        */
+        $accesslist=['update','list', 'show','trash','reorder','delete','create','clone','BulkDelete'];
+        foreach ($accesslist as $l) {
+            if(amer_user()->canper($n.'-'.$l) === false){$this->Amer->denyAccess($l);}
+        }
     }
     protected function setupShowOperation()
     {
@@ -49,17 +53,17 @@ class Employment_DinamicPagesAmerController extends AmerController
     protected function setupListOperation(){
         AMER::addColumns([
             [
-                'name'=>'Text',
+                'name'=>'text',
                 'type'=>'text',
                 'label'=>trans('JOBLANG::Employment_DinamicPages.name'),
             ],
             [
-                'name'=>'Control',
+                'name'=>'control',
                 'type'=>'text',
                 'label'=>trans('JOBLANG::Employment_DinamicPages.Control'),
             ],
             [
-                'name'=>'Function',
+                'name'=>'function',
                 'type'=>'text',
                 'label'=>trans('JOBLANG::Employment_DinamicPages.function'),
             ]
@@ -69,17 +73,17 @@ class Employment_DinamicPagesAmerController extends AmerController
     function fields(){
         AMER::addFields([
             [
-                'name'=>'Text',
+                'name'=>'text',
                 'type'=>'text',
                 'label'=>trans('JOBLANG::Employment_DinamicPages.name'),
             ],
             [
-                'name'=>'Control',
+                'name'=>'control',
                 'type'=>'text',
                 'label'=>trans('JOBLANG::Employment_DinamicPages.Control'),
             ],
             [
-                'name'=>'Function',
+                'name'=>'function',
                 'type'=>'text',
                 'label'=>trans('JOBLANG::Employment_DinamicPages.function'),
             ]
