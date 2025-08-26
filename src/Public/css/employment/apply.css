@@ -1,0 +1,47 @@
+@charset "UTF-8";
+html,
+body {
+  height: 100%;
+  height: 100%
+}
+a,
+a:focus,
+a:hover {
+  color: #fff;
+}
+#headers{
+    background-color: #0a384f;
+}
+
+.is-invalid{
+    border-bottom: 1px red;
+    background-color:rgba(255, 0, 0, 1)
+}
+input[type="checkbox"][readonly] {
+        pointer-events: none;
+}
+input[type="date"]{
+    display: block;
+    direction: rtl;
+}
+form{
+    direction: rtl;
+}
+input{
+    display: block;
+    direction: rtl;
+}
+.required::before{
+  content: "*";
+  color: red;
+}
+
+.titlediv{
+    background-color: #0a384f;
+}
+
+.omg{
+    height: 100%;
+    position:initial;
+    text-align: right;
+}

@@ -1,0 +1,20 @@
+@page :left {
+    margin-left: 0.5cm;
+  }
+  
+  @page :right {
+    margin-left: 0.5cm;
+  }
+  @page :top {
+    margin-left: 0.5cm;
+  }
+  .page-header,.page-footer{
+    display: none;
+}
+
+@page :blank {
+    @top-center { content: "This page is intentionally left blank." }
+  }
+main{
+    padding: 0px;
+}
